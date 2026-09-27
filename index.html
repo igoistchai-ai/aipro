@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NZX AI — Coding Chat</title>
+<style>
+:root{
+  --bg:#f3efe9;--paper:#fffdf9;--paper2:#f8f3ec;--ink:#211b16;--muted:#887d71;
+  --brown:#8f5d3b;--brown2:#6f4328;--line:#ded4c8;--soft:#eee5da;--white:#fff;
+  --shadow:0 20px 60px rgba(63,42,25,.12);--radius:22px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:
+radial-gradient(circle at 12% 0%,#fff 0,transparent 28%),linear-gradient(135deg,#eee8e0,#f7f3ed 52%,#e9e1d7)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.app{height:100dvh;display:grid;grid-template-columns:270px 1fr;overflow:hidden}
+.sidebar{background:rgba(255,253,249,.88);border-right:1px solid var(--line);backdrop-filter:blur(18px);padding:18px;display:flex;flex-direction:column;gap:16px}
+.brand{display:flex;align-items:center;gap:11px;padding:5px 4px 12px}
+.logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(145deg,#a76d45,#714326);display:grid;place-items:center;color:white;font-weight:900;box-shadow:0 9px 22px #8f5d3b35}
+.brand b{font-size:16px}.brand small{display:block;color:var(--muted);font-size:10px;margin-top:2px}
+.new{border:0;background:var(--ink);color:#fff;padding:13px 15px;border-radius:14px;font-weight:750;box-shadow:0 8px 20px #211b1618}
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:.13em;color:#a09488;padding:7px 4px 2px}
+.history{overflow:auto;display:flex;flex-direction:column;gap:5px}
+.chat-item{border:0;background:transparent;text-align:left;padding:11px 12px;border-radius:12px;color:#5f554b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-item:hover,.chat-item.active{background:#efe7dd;color:var(--ink)}
+.side-bottom{margin-top:auto;border-top:1px solid var(--line);padding-top:12px}
+.profile-mini{display:flex;align-items:center;gap:10px;padding:8px;border-radius:14px}
+.avatar{width:34px;height:34px;border-radius:50%;background:#d5b99f;object-fit:cover;display:grid;place-items:center;font-weight:800;color:#69452e;overflow:hidden}
+.profile-mini div:last-child{min-width:0}.profile-name{font-weight:700;font-size:13px}.profile-status{font-size:10px;color:var(--muted)}
+
+.main{min-width:0;display:flex;flex-direction:column;position:relative}
+.topbar{height:72px;display:flex;align-items:center;justify-content:space-between;padding:0 28px;border-bottom:1px solid #e2d9cf;background:#ffffff7d;backdrop-filter:blur(18px)}
+.model-wrap{display:flex;align-items:center;gap:10px}
+.model-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.model-select{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-radius:12px;padding:10px 35px 10px 12px;font-weight:750;outline:none}
+.top-actions{display:flex;align-items:center;gap:8px}
+.icon-btn,.link-key{border:1px solid var(--line);background:#fffdf9;color:var(--ink);border-radius:12px;padding:10px 12px}
+.link-key{background:var(--brown);border-color:var(--brown);color:white;font-weight:750}
+.key-state{font-size:10px;color:#7d6f62;margin-right:4px}
+.chat{flex:1;overflow:auto;padding:42px 6vw 145px}
+.welcome{max-width:900px;margin:6vh auto 0;text-align:center;animation:up .5s ease}
+.welcome .eyebrow{display:inline-flex;gap:7px;align-items:center;padding:7px 11px;border-radius:999px;background:#eadfd3;color:#745035;font-size:11px;font-weight:750}
+.welcome h1{font-family:Georgia,serif;font-size:clamp(36px,6vw,68px);line-height:.98;margin:18px 0 14px;letter-spacing:-.04em}
+.welcome h1 span{color:var(--brown)}
+.welcome p{color:var(--muted);max-width:620px;margin:auto;line-height:1.65}
+.suggestions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:900px;margin:30px auto}
+.suggestion{padding:15px;text-align:left;border:1px solid var(--line);background:#fffaf4;border-radius:16px;transition:.2s}
+.suggestion:hover{transform:translateY(-2px);border-color:#c8b29d;box-shadow:0 10px 30px #6b4b3220}
+.suggestion b{font-size:12px}.suggestion small{display:block;color:var(--muted);margin-top:6px;line-height:1.4}
+.messages{max-width:950px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.msg{display:flex;gap:12px;animation:up .25s ease}
+.msg.user{justify-content:flex-end}.msg.user .bubble{background:#2b241e;color:white;border-radius:20px 20px 5px 20px}
+.msg.assistant .bubble{background:#fffdf9;border:1px solid var(--line);border-radius:20px 20px 20px 5px}
+.bubble{max-width:min(850px,88%);padding:15px 17px;box-shadow:0 8px 28px #3e2a1c0a;line-height:1.62;overflow:hidden}
+.meta{font-size:10px;color:var(--muted);margin:0 0 6px 3px}
+.user .meta{text-align:right}
+.bubble p{margin:0 0 10px}.bubble p:last-child{margin-bottom:0}.bubble h1,.bubble h2,.bubble h3{font-family:Georgia,serif;margin:15px 0 8px}.bubble ul{padding-left:22px}
+.bubble code{background:#eee5da;border-radius:6px;padding:2px 5px;font-family:"SFMono-Regular",Consolas,monospace;font-size:.9em}
+.bubble pre{position:relative;background:#171411;color:#eee9e2;border-radius:14px;padding:16px;margin:12px 0;overflow:auto;border:1px solid #3d332a}
+.bubble pre code{background:none;padding:0;color:inherit;font-size:12px;line-height:1.6;white-space:pre}
+.copy-code{position:absolute;right:9px;top:8px;border:1px solid #51463c;background:#28221d;color:#ddd3c9;border-radius:8px;padding:5px 8px;font-size:10px}
+.attachments{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.attachment{border:1px solid #d8cabb;background:#f5eee6;border-radius:11px;padding:7px 9px;font-size:11px;display:flex;align-items:center;gap:7px}
+.attachment img{width:42px;height:42px;border-radius:8px;object-fit:cover}
+
+.composer-wrap{position:absolute;left:0;right:0;bottom:0;padding:18px 6vw 24px;background:linear-gradient(transparent,#f2eee8 38%);pointer-events:none}
+.composer{pointer-events:auto;max-width:950px;margin:auto;background:#fffdf9;border:1px solid #d8cec2;border-radius:22px;box-shadow:var(--shadow);padding:10px}
+.file-row{display:flex;gap:7px;flex-wrap:wrap;padding:2px 4px 8px}
+.file-chip{background:#f0e7dc;border-radius:10px;padding:7px 9px;font-size:11px;display:flex;align-items:center;gap:7px}
+.file-chip button{border:0;background:none;color:#806f60}
+.input-row{display:flex;align-items:flex-end;gap:8px}
+.tool-btn,.send{width:42px;height:42px;border-radius:13px;border:1px solid var(--line);background:#f7f1ea;color:#5c493a}
+.send{background:var(--brown);border-color:var(--brown);color:#fff;font-size:18px}
+textarea{flex:1;border:0;outline:0;resize:none;background:transparent;min-height:42px;max-height:180px;padding:11px 5px;line-height:1.4;color:var(--ink)}
+.composer-foot{display:flex;justify-content:space-between;color:#a09386;font-size:9px;padding:6px 6px 1px}
+.typing{display:inline-flex;gap:4px;align-items:center}.dot{width:5px;height:5px;background:#9d8a78;border-radius:50%;animation:blink 1s infinite}.dot:nth-child(2){animation-delay:.15s}.dot:nth-child(3){animation-delay:.3s}
+
+.modal-back{position:fixed;inset:0;background:#211b1666;backdrop-filter:blur(8px);z-index:20;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-back.show{display:flex}
+.modal{width:min(470px,100%);background:#fffdf9;border:1px solid var(--line);border-radius:24px;box-shadow:0 30px 90px #24170d35;padding:22px;animation:pop .2s ease}
+.modal h2{font-family:Georgia,serif;margin:0 0 5px;font-size:25px}.modal p{color:var(--muted);font-size:12px;line-height:1.5}
+.field{margin:15px 0}.field label{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.1em;color:#8d7d6d;margin-bottom:7px}
+.field input,.field select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#faf5ef;outline:none}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}.primary,.secondary{border:0;border-radius:12px;padding:11px 15px;font-weight:750}.primary{background:var(--brown);color:#fff}.secondary{background:#eee6dc;color:#594a3d}
+.profile-card{display:flex;gap:16px;align-items:center;margin:16px 0}.big-avatar{width:72px;height:72px;border-radius:20px;object-fit:cover;background:#dcc5ae;display:grid;place-items:center;font-size:25px;font-weight:800;color:#704a31;overflow:hidden}
+.toast{position:fixed;right:20px;bottom:20px;background:#251e19;color:#fff;padding:11px 14px;border-radius:12px;font-size:12px;z-index:30;opacity:0;transform:translateY(10px);transition:.25s}.toast.show{opacity:1;transform:none}
+.hidden{display:none!important}
+@keyframes up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:none}}
+@keyframes blink{50%{opacity:.2}}
+@media(max-width:800px){
+ .app{grid-template-columns:1fr}.sidebar{display:none}.topbar{padding:0 14px}.model-label{display:none}.chat{padding:28px 14px 140px}.composer-wrap{padding:12px 12px 16px}.suggestions{grid-template-columns:1fr}.welcome{margin-top:4vh}.welcome h1{font-size:45px}.key-state{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><div class="logo">N</div><div><b>NZX AI</b><small>coding intelligence</small></div></div>
+    <button class="new" id="newChat">＋ New chat</button>
+    <div class="section-label">Chats</div>
+    <div class="history" id="history"></div>
+    <div class="side-bottom">
+      <button class="profile-mini" id="profileBtn" style="border:0;background:none;width:100%;text-align:left">
+        <div class="avatar" id="miniAvatar">N</div><div><div class="profile-name" id="miniName">Nezzx</div><div class="profile-status">Local profile</div></div>
+      </button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="model-wrap">
+        <span class="model-label">Model</span>
+        <select class="model-select" id="model">
+          <option value="claude-opus-5.5">Opus 5.5</option>
+          <option value="gpt-5.6-sol">GPT 5.6 Sol</option>
+          <option value="astra">Astra — custom ID</option>
+        </select>
+      </div>
+      <div class="top-actions">
+        <span class="key-state" id="keyState">No key</span>
+        <button class="link-key" id="keyBtn">Link Key</button>
+        <button class="icon-btn" id="profileTop">◉</button>
+      </div>
+    </header>
+
+    <section class="chat" id="chat">
+      <div class="welcome" id="welcome">
+        <div class="eyebrow">✦ CLEAN APIS · OPENAI COMPATIBLE</div>
+        <h1>Build something<br><span>beautiful.</span></h1>
+        <p>Полноценный AI-чат для кода, Lua, UI, сайтов и обычных задач. Подключи свой Clean APIs key, выбери модель и начинай.</p>
+        <div class="suggestions">
+          <button class="suggestion" data-prompt="Создай профессиональный Roblox Lua GUI с плавными Tween-анимациями, красивыми обводками и адаптивным дизайном."><b>Roblox / Lua</b><small>GUI, scripts, RemoteEvents, оптимизация</small></button>
+          <button class="suggestion" data-prompt="Создай современный HTML/CSS/JS сайт с премиальным дизайном, анимациями и адаптивностью."><b>Web development</b><small>HTML, CSS, JavaScript, API</small></button>
+          <button class="suggestion" data-prompt="Проанализируй приложенный скриншот и сделай подробное техническое ТЗ для повторения интерфейса."><b>Image → code</b><small>Покажи скриншот и опиши результат</small></button>
+        </div>
+      </div>
+      <div class="messages" id="messages"></div>
+    </section>
+
+    <div class="composer-wrap">
+      <div class="composer">
+        <div class="file-row" id="fileRow"></div>
+        <div class="input-row">
+          <button class="tool-btn" id="attachBtn" title="Attach file">＋</button>
+          <textarea id="input" placeholder="Напиши задачу… например: сделай Lua GUI как на скриншоте" rows="1"></textarea>
+          <button class="send" id="sendBtn" title="Send">↑</button>
+        </div>
+        <div class="composer-foot"><span>Shift + Enter — новая строка</span><span id="tokenInfo">Clean APIs</span></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<input id="fileInput" type="file" multiple hidden accept="image/png,image/jpeg,image/webp,image/gif,.txt,.lua,.js,.ts,.html,.css,.json,.py,.md,.xml,.csv">
+
+<div class="modal-back" id="keyModal">
+  <div class="modal">
+    <h2>Connect API key</h2>
+    <p>Ключ хранится только в localStorage этого браузера и отправляется в Clean APIs. Для общего компьютера используй отдельный ключ.</p>
+    <div class="field"><label>Clean APIs key</label><input id="apiKey" type="password" placeholder="cc_…"></div>
+    <div class="field"><label>Astra model ID</label><input id="astraId" value="astra" placeholder="точный model ID из /v1/models"></div>
+    <div class="modal-actions"><button class="secondary closeModal">Cancel</button><button class="primary" id="saveKey">Save key</button></div>
+  </div>
+</div>
+
+<div class="modal-back" id="profileModal">
+  <div class="modal">
+    <h2>Your profile</h2>
+    <p>Профиль локальный: ник и аватар не отправляются в API.</p>
+    <div class="profile-card"><div class="big-avatar" id="bigAvatar">N</div><div><b id="profilePreview">Nezzx</b><div style="color:#887d71;font-size:11px">Local profile</div></div></div>
+    <div class="field"><label>Nickname</label><input id="nickname" maxlength="28" placeholder="Nezzx"></div>
+    <div class="field"><label>Avatar</label><input id="avatarInput" type="file" accept="image/png,image/jpeg,image/webp"></div>
+    <div class="modal-actions"><button class="secondary closeModal">Cancel</button><button class="primary" id="saveProfile">Save profile</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const keyStore = "nzx_clean_key";
+const profileStore = "nzx_profile";
+const chatsStore = "nzx_chats";
+const state = {messages:[], files:[], busy:false, chatId:crypto.randomUUID()};
+
+const SYSTEM = `You are NZX AI, an expert software engineer and coding assistant.
+You write production-quality code. For Lua, Roblox Lua/Luau, HTML, CSS, JavaScript, Python and similar languages, provide complete working code when the user asks for code, not fragments unless requested.
+When the user gives a screenshot, analyze its visual structure, spacing, typography, colors, borders, shadows, animations and layout, then implement the requested result.
+For Roblox/Luau, use correct Roblox APIs, LocalScript/Script context where relevant, and explain where code belongs when useful.
+Prefer clean, maintainable code and preserve the user's requested design. Never claim code was tested when it was not.
+If the user asks for a full replacement, return a full replacement file.
+Answer in the user's language.`;
+
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),2600)}
+function getKey(){return localStorage.getItem(keyStore)||""}
+function updateKeyState(){const k=getKey();$("#keyState").textContent=k?`Key ••••${k.slice(-4)}`:"No key"}
+function profile(){try{return JSON.parse(localStorage.getItem(profileStore))||{name:"Nezzx",avatar:""}}catch{return {name:"Nezzx",avatar:""}}}
+function updateProfileUI(){
+  const p=profile(); $("#miniName").textContent=p.name||"Nezzx"; $("#profilePreview").textContent=p.name||"Nezzx";
+  for(const el of [$("#miniAvatar"),$("#bigAvatar")]){
+    el.innerHTML=""; if(p.avatar){const im=new Image();im.src=p.avatar;el.appendChild(im);im.style.width="100%";im.style.height="100%";im.style.objectFit="cover"} else el.textContent=(p.name||"N")[0].toUpperCase();
+  }
+}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
+function renderMarkdown(src){
+  let s=escapeHtml(src).replace(/\r/g,"");
+  const blocks=[];
+  s=s.replace(/```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g,(_,lang,code)=>{
+    const id="cb"+blocks.length;blocks.push({id,code:code.replace(/^\n|\n$/g,""),lang});
+    return `@@CODE_${id}@@`;
+  });
+  s=s.replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>").replace(/^# (.*)$/gm,"<h1>$1</h1>");
+  s=s.replace(/`([^`]+)`/g,"<code>$1</code>");
+  s=s.replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>").replace(/\*([^*]+)\*/g,"<em>$1</em>");
+  s=s.replace(/^\- (.*)$/gm,"<li>$1</li>").replace(/(<li>.*<\/li>\n?)+/g,m=>"<ul>"+m+"</ul>");
+  s=s.split(/\n{2,}/).map(p=>p.startsWith("<h")||p.startsWith("<ul>")?p:"<p>"+p.replace(/\n/g,"<br>")+"</p>").join("");
+  for(const b of blocks)s=s.replace(`@@CODE_${b.id}@@`,`<pre><button class="copy-code" data-code="${encodeURIComponent(b.code)}">Copy</button><code>${escapeHtml(b.code)}</code></pre>`);
+  return s;
+}
+function addMessage(role,content,attachments=[]){
+  $("#welcome").classList.add("hidden");
+  const row=document.createElement("div");row.className=`msg ${role}`;
+  const bubble=document.createElement("div");bubble.className="bubble";
+  const meta=document.createElement("div");meta.className="meta";meta.textContent=role==="user"?(profile().name||"You"):"NZX AI";
+  bubble.appendChild(meta);
+  const body=document.createElement("div");body.innerHTML=role==="assistant"?renderMarkdown(content):escapeHtml(content).replace(/\n/g,"<br>");
+  bubble.appendChild(body);
+  if(attachments.length){
+    const ar=document.createElement("div");ar.className="attachments";
+    attachments.forEach(a=>{const c=document.createElement("div");c.className="attachment";
+      if(a.kind==="image"){const im=new Image();im.src=a.data;im.title=a.name;c.appendChild(im)}
+      const sp=document.createElement("span");sp.textContent=a.name;c.appendChild(sp);ar.appendChild(c)
+    });bubble.appendChild(ar);
+  }
+  row.appendChild(bubble);$("#messages").appendChild(row);
+  $("#chat").scrollTop=$("#chat").scrollHeight;
+  return row;
+}
+function showTyping(){
+  const row=document.createElement("div");row.className="msg assistant";row.id="typing";
+  row.innerHTML='<div class="bubble"><div class="meta">NZX AI</div><span class="typing"><i class="dot"></i><i class="dot"></i><i class="dot"></i></span></div>';
+  $("#messages").appendChild(row);$("#chat").scrollTop=$("#chat").scrollHeight;
+}
+function removeTyping(){$("#typing")?.remove()}
+function autosize(){const e=$("#input");e.style.height="auto";e.style.height=Math.min(e.scrollHeight,180)+"px"}
+function addFileChip(f,i){
+  const c=document.createElement("div");c.className="file-chip";c.innerHTML=`<span>${f.kind==="image"?"▧":"▤"} ${escapeHtml(f.name)}</span><button data-i="${i}">×</button>`;
+  c.querySelector("button").onclick=()=>{state.files.splice(i,1);renderFileRow()};$("#fileRow").appendChild(c)
+}
+function renderFileRow(){$("#fileRow").innerHTML="";state.files.forEach((f,i)=>addFileChip(f,i))}
+async function readFile(file){
+  if(file.size>5*1024*1024) throw new Error(`${file.name}: max 5 MB`);
+  if(file.type.startsWith("image/")){
+    return await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve({name:file.name,kind:"image",data:r.result});r.onerror=reject;r.readAsDataURL(file)})
+  }
+  const text=await file.text();
+  return {name:file.name,kind:"text",text:text.slice(0,120000)};
+}
+async function chooseFiles(files){
+  for(const f of files){try{state.files.push(await readFile(f))}catch(e){toast(e.message)}}
+  renderFileRow();
+}
+function apiModel(){const v=$("#model").value;return v==="astra"?(localStorage.getItem("nzx_astra_id")||"astra"):v}
+function userContent(text){
+  if(!state.files.length)return text;
+  const parts=[{type:"text",text}];
+  for(const f of state.files){
+    if(f.kind==="image")parts.push({type:"image_url",image_url:{url:f.data}});
+    else parts.push({type:"text",text:`\n\n--- FILE: ${f.name} ---\n${f.text}\n--- END FILE ---`});
+  }
+  return parts;
+}
+async function send(){
+  if(state.busy)return;
+  const text=$("#input").value.trim();
+  if(!text && !state.files.length)return;
+  const key=getKey();if(!key){openModal("#keyModal");toast("Сначала подключи API key");return}
+  const files=state.files.slice(); const content=userContent(text||"Проанализируй прикреплённый файл.");
+  state.messages.push({role:"user",content});
+  addMessage("user",text||"Проанализируй прикреплённый файл.",files);
+  $("#input").value="";autosize();state.files=[];renderFileRow();
+  state.busy=true;$("#sendBtn").disabled=true;showTyping();
+  try{
+    const payload={model:apiModel(),messages:[{role:"system",content:SYSTEM},...state.messages],stream:true,max_tokens:8192,temperature:.35};
+    const res=await fetch("https://www.cleanapis.com/v1/chat/completions",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json","Accept":"text/event-stream"},body:JSON.stringify(payload)});
+    if(!res.ok){let msg="Request failed";try{const j=await res.json();msg=j.error?.message||msg}catch{}throw new Error(`${res.status}: ${msg}`)}
+    removeTyping();
+    const row=addMessage("assistant","");const body=row.querySelector(".bubble > div:last-child");
+    let answer="",buffer="";
+    const reader=res.body.getReader(),decoder=new TextDecoder();
+    while(true){
+      const {value,done}=await reader.read();if(done)break;
+      buffer+=decoder.decode(value,{stream:true});
+      const lines=buffer.split("\n");buffer=lines.pop()||"";
+      for(const line of lines){
+        if(!line.startsWith("data:"))continue;
+        const d=line.slice(5).trim();if(!d||d==="[DONE]")continue;
+        try{const j=JSON.parse(d);const delta=j.choices?.[0]?.delta?.content||"";answer+=delta;body.innerHTML=renderMarkdown(answer);$("#chat").scrollTop=$("#chat").scrollHeight}catch{}
+      }
+    }
+    state.messages.push({role:"assistant",content:answer});
+    saveChat();
+  }catch(e){removeTyping();addMessage("assistant",`**Ошибка:** ${e.message}\n\nПроверь ключ, модель и размер прикреплённых файлов.`)}
+  finally{state.busy=false;$("#sendBtn").disabled=false}
+}
+function saveChat(){
+  const all=JSON.parse(localStorage.getItem(chatsStore)||"[]");
+  const title=String(state.messages.find(x=>x.role==="user")?.content||"New chat").slice(0,55).replace(/\n/g," ");
+  const idx=all.findIndex(x=>x.id===state.chatId);
+  const item={id:state.chatId,title,messages:state.messages.map(m=>({role:m.role,content:m.content}))};
+  if(idx>=0)all[idx]=item;else all.unshift(item);
+  localStorage.setItem(chatsStore,JSON.stringify(all.slice(0,30)));renderHistory();
+}
+function renderHistory(){
+  const h=$("#history");h.innerHTML="";
+  const all=JSON.parse(localStorage.getItem(chatsStore)||"[]");
+  all.forEach(x=>{const b=document.createElement("button");b.className="chat-item"+(x.id===state.chatId?" active":"");b.textContent=x.title||"New chat";b.onclick=()=>loadChat(x);h.appendChild(b)})
+}
+function loadChat(x){
+  state.chatId=x.id;state.messages=x.messages||[];$("#messages").innerHTML="";$("#welcome").classList.toggle("hidden",state.messages.length>0);
+  state.messages.forEach(m=>addMessage(m.role,typeof m.content==="string"?m.content:"[attached content]"));renderHistory();
+}
+function newChat(){state.chatId=crypto.randomUUID();state.messages=[];state.files=[];$("#messages").innerHTML="";$("#welcome").classList.remove("hidden");renderFileRow();renderHistory();$("#input").focus()}
+function openModal(id){$(id).classList.add("show")}
+function closeModals(){document.querySelectorAll(".modal-back").forEach(x=>x.classList.remove("show"))}
+
+$("#keyBtn").onclick=()=>{const k=getKey();$("#apiKey").value=k;$("#astraId").value=localStorage.getItem("nzx_astra_id")||"astra";openModal("#keyModal")}
+$("#saveKey").onclick=()=>{const k=$("#apiKey").value.trim();if(k&&!k.startsWith("cc_")){toast("Ключ обычно начинается с cc_");return}localStorage.setItem(keyStore,k);localStorage.setItem("nzx_astra_id",$("#astraId").value.trim()||"astra");updateKeyState();closeModals();toast(k?"API key connected":"API key removed")}
+document.querySelectorAll(".closeModal").forEach(b=>b.onclick=closeModals);
+document.querySelectorAll(".modal-back").forEach(m=>m.onclick=e=>{if(e.target===m)m.classList.remove("show")});
+$("#profileBtn").onclick=$("#profileTop").onclick=()=>{const p=profile();$("#nickname").value=p.name||"Nezzx";openModal("#profileModal")}
+$("#avatarInput").onchange=async e=>{const f=e.target.files[0];if(!f)return;if(f.size>2*1024*1024){toast("Аватар максимум 2 MB");return}const r=new FileReader();r.onload=()=>{window.pendingAvatar=r.result;$("#bigAvatar").innerHTML=`<img src="${r.result}" style="width:100%;height:100%;object-fit:cover">`};r.readAsDataURL(f)}
+$("#saveProfile").onclick=()=>{const old=profile();localStorage.setItem(profileStore,JSON.stringify({name:$("#nickname").value.trim()||"Nezzx",avatar:window.pendingAvatar||old.avatar||""}));window.pendingAvatar=null;updateProfileUI();closeModals();toast("Profile saved")}
+$("#newChat").onclick=newChat;$("#attachBtn").onclick=()=>$("#fileInput").click();$("#fileInput").onchange=e=>chooseFiles([...e.target.files]);$("#sendBtn").onclick=send;
+$("#input").oninput=autosize;$("#input").onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send()}};
+document.querySelectorAll(".suggestion").forEach(b=>b.onclick=()=>{$("#input").value=b.dataset.prompt;autosize();$("#input").focus()});
+document.addEventListener("click",e=>{const b=e.target.closest(".copy-code");if(b){navigator.clipboard.writeText(decodeURIComponent(b.dataset.code));b.textContent="Copied";setTimeout(()=>b.textContent="Copy",1000)}});
+$("#model").onchange=()=>toast("Модель: "+$("#model").selectedOptions[0].text);
+
+updateKeyState();updateProfileUI();renderHistory();autosize();
+</script>
+</body>
+</html>
