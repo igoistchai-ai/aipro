@@ -1,5166 +1,3744 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <title>NZX AI</title>
 
 <style>
-:root{
-  --bg:#020202;
-  --bg2:#050505;
-  --glass:rgba(18,18,20,.58);
-  --glass2:rgba(255,255,255,.055);
-  --glass3:rgba(255,255,255,.085);
-  --border:rgba(255,255,255,.11);
-  --border2:rgba(255,255,255,.17);
-  --white:#fff;
-  --text:#f7f7f7;
-  --muted:#98989f;
-  --muted2:#68686e;
-  --accent:#fff;
-  --danger:#ff5f57;
-  --shadow:0 25px 80px rgba(0,0,0,.48);
-  --radius:24px;
-}
-
 *{
-  box-sizing:border-box;
-  -webkit-tap-highlight-color:transparent;
+    box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
 }
 
-html,
-body{
-  width:100%;
-  height:100%;
-  margin:0;
-  overflow:hidden;
-  background:#000;
-  color:var(--text);
-  font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    "SF Pro Display",
-    "SF Pro Text",
-    Inter,
-    system-ui,
-    sans-serif;
+html,body{
+    width:100%;
+    height:100%;
+    margin:0;
+    overflow:hidden;
+    background:#000;
+    color:#f5f5f7;
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text",Inter,system-ui,sans-serif;
 }
 
 body{
-  position:relative;
-  background:
-    radial-gradient(circle at 50% -20%,rgba(255,255,255,.08),transparent 38%),
-    #000;
+    position:relative;
+    isolation:isolate;
 }
 
-/* =========================
-   SATURN CANVAS
-========================= */
-
-#space{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:0;
-  pointer-events:none;
-  opacity:.9;
+button,
+textarea,
+input,
+select{
+    font:inherit;
 }
 
-.space-vignette{
-  position:fixed;
-  inset:0;
-  z-index:1;
-  pointer-events:none;
-  background:
-    radial-gradient(
-      circle at 50% 48%,
-      transparent 0%,
-      rgba(0,0,0,.08) 38%,
-      rgba(0,0,0,.68) 100%
-    );
+button{
+    border:0;
+    color:inherit;
+    cursor:pointer;
 }
 
-/* =========================
-   APP
-========================= */
+#spaceCanvas{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    z-index:-5;
+    pointer-events:none;
+    opacity:.72;
+}
+
+.space-glow{
+    position:fixed;
+    width:70vw;
+    height:70vw;
+    max-width:900px;
+    max-height:900px;
+    left:50%;
+    top:48%;
+    transform:translate(-50%,-50%);
+    border-radius:50%;
+    background:
+        radial-gradient(circle,
+        rgba(255,255,255,.035) 0%,
+        rgba(255,255,255,.012) 32%,
+        transparent 68%);
+    pointer-events:none;
+    z-index:-4;
+}
+
+.noise{
+    position:fixed;
+    inset:0;
+    z-index:-2;
+    pointer-events:none;
+    opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+}
 
 .app{
-  position:relative;
-  z-index:2;
-  display:flex;
-  width:100%;
-  height:100%;
-  padding:10px;
-  gap:10px;
+    position:relative;
+    z-index:1;
+    width:100%;
+    height:100dvh;
+    min-height:0;
+    display:grid;
+    grid-template-columns:270px minmax(0,1fr);
+    gap:12px;
+    padding:12px;
 }
-
-/* =========================
-   GLASS
-========================= */
 
 .glass{
-  background:
-    linear-gradient(
-      135deg,
-      rgba(255,255,255,.075),
-      rgba(255,255,255,.025)
-    );
-  border:1px solid var(--border);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 25px 80px rgba(0,0,0,.25);
-  backdrop-filter:blur(32px) saturate(145%);
-  -webkit-backdrop-filter:blur(32px) saturate(145%);
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255,255,255,.075),
+            rgba(255,255,255,.025) 42%,
+            rgba(255,255,255,.012)
+        );
+    border:1px solid rgba(255,255,255,.105);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.075),
+        inset 0 -1px 0 rgba(0,0,0,.25),
+        0 18px 70px rgba(0,0,0,.34);
+    backdrop-filter:blur(30px) saturate(150%);
+    -webkit-backdrop-filter:blur(30px) saturate(150%);
 }
 
-/* =========================
-   SIDEBAR
-========================= */
-
 .sidebar{
-  width:270px;
-  min-width:270px;
-  height:100%;
-  border-radius:28px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-  position:relative;
+    min-width:0;
+    min-height:0;
+    height:calc(100dvh - 24px);
+    border-radius:28px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
 }
 
 .brand{
-  height:78px;
-  padding:18px 18px 14px;
-  display:flex;
-  align-items:center;
-  gap:12px;
+    height:76px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:0 18px;
+    flex-shrink:0;
 }
 
-.logo{
-  width:42px;
-  height:42px;
-  border-radius:14px;
-  display:grid;
-  place-items:center;
-  font-weight:800;
-  font-size:15px;
-  letter-spacing:-.8px;
-  color:#000;
-  background:#fff;
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,.2),
-    0 8px 30px rgba(255,255,255,.12);
+.brand-icon{
+    width:40px;
+    height:40px;
+    display:grid;
+    place-items:center;
+    border-radius:14px;
+    background:rgba(255,255,255,.08);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.1);
+    font-weight:800;
+    letter-spacing:-1px;
 }
 
-.brand-title{
-  font-size:17px;
-  font-weight:700;
-  letter-spacing:-.5px;
+.brand-name{
+    font-size:17px;
+    font-weight:750;
+    letter-spacing:-.4px;
 }
 
 .brand-sub{
-  color:var(--muted);
-  font-size:11px;
-  margin-top:2px;
+    color:rgba(255,255,255,.42);
+    font-size:11px;
+    margin-top:2px;
 }
 
 .new-chat{
-  margin:5px 14px 14px;
-  width:calc(100% - 28px);
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.065);
-  color:#fff;
-  height:46px;
-  border-radius:15px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:8px;
-  font-weight:650;
-  transition:.2s ease;
+    margin:0 13px 13px;
+    height:48px;
+    border-radius:16px;
+    background:rgba(255,255,255,.085);
+    border:1px solid rgba(255,255,255,.1);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    font-weight:650;
+    transition:transform .16s ease,background .16s ease;
 }
 
 .new-chat:hover{
-  background:rgba(255,255,255,.11);
-  border-color:var(--border2);
-  transform:translateY(-1px);
+    background:rgba(255,255,255,.13);
 }
 
 .new-chat:active{
-  transform:scale(.98);
+    transform:scale(.97);
 }
 
-.history-label{
-  padding:0 18px 9px;
-  color:#66666c;
-  font-size:10px;
-  font-weight:700;
-  text-transform:uppercase;
-  letter-spacing:1.2px;
+.history-title{
+    padding:8px 18px 8px;
+    color:rgba(255,255,255,.35);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:.12em;
+    font-weight:700;
 }
 
 .history{
-  flex:1;
-  overflow:auto;
-  padding:0 9px 10px;
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    padding:0 8px 8px;
+    overscroll-behavior:contain;
 }
 
 .history::-webkit-scrollbar,
-.chat::-webkit-scrollbar,
-.modal-body::-webkit-scrollbar{
-  width:5px;
+.chat::-webkit-scrollbar{
+    width:5px;
 }
 
 .history::-webkit-scrollbar-thumb,
-.chat::-webkit-scrollbar-thumb,
-.modal-body::-webkit-scrollbar-thumb{
-  background:rgba(255,255,255,.12);
-  border-radius:99px;
+.chat::-webkit-scrollbar-thumb{
+    background:rgba(255,255,255,.13);
+    border-radius:99px;
 }
 
-.history-item{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  width:100%;
-  border:0;
-  background:transparent;
-  color:#cfcfd2;
-  text-align:left;
-  border-radius:13px;
-  padding:10px;
-  margin-bottom:3px;
-  cursor:pointer;
-  font-size:12px;
-  transition:.18s ease;
+.chat-item{
+    width:100%;
+    min-height:45px;
+    padding:10px 11px;
+    margin:2px 0;
+    border-radius:13px;
+    background:transparent;
+    border:1px solid transparent;
+    color:rgba(255,255,255,.64);
+    display:flex;
+    align-items:center;
+    gap:9px;
+    text-align:left;
+    transition:background .15s ease,color .15s ease;
 }
 
-.history-item:hover{
-  background:rgba(255,255,255,.055);
+.chat-item:hover{
+    background:rgba(255,255,255,.05);
+    color:#fff;
 }
 
-.history-item.active{
-  background:rgba(255,255,255,.08);
-  color:#fff;
+.chat-item.active{
+    background:rgba(255,255,255,.075);
+    border-color:rgba(255,255,255,.075);
+    color:#fff;
 }
 
-.history-dot{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#777;
-  flex:none;
+.chat-item-icon{
+    width:25px;
+    height:25px;
+    border-radius:8px;
+    background:rgba(255,255,255,.07);
+    display:grid;
+    place-items:center;
+    flex-shrink:0;
+    font-size:12px;
 }
 
-.history-item.active .history-dot{
-  background:#fff;
-  box-shadow:0 0 10px #fff;
+.chat-item-text{
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:13px;
 }
 
 .sidebar-bottom{
-  padding:10px;
-  border-top:1px solid rgba(255,255,255,.07);
+    padding:10px;
+    border-top:1px solid rgba(255,255,255,.06);
+    display:flex;
+    gap:8px;
 }
 
-.profile-button{
-  width:100%;
-  border:1px solid transparent;
-  background:transparent;
-  color:#fff;
-  border-radius:16px;
-  padding:9px;
-  display:flex;
-  align-items:center;
-  gap:10px;
-  cursor:pointer;
-  text-align:left;
-  transition:.18s ease;
+.side-action{
+    flex:1;
+    height:43px;
+    border-radius:13px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.065);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    color:rgba(255,255,255,.7);
+    transition:.15s ease;
 }
 
-.profile-button:hover{
-  background:rgba(255,255,255,.055);
-  border-color:var(--border);
+.side-action:hover{
+    background:rgba(255,255,255,.08);
+    color:#fff;
 }
-
-.avatar{
-  width:38px;
-  height:38px;
-  border-radius:50%;
-  background:
-    linear-gradient(145deg,#333,#111);
-  border:1px solid rgba(255,255,255,.13);
-  object-fit:cover;
-  flex:none;
-}
-
-.profile-name{
-  font-size:12px;
-  font-weight:650;
-}
-
-.profile-desc{
-  color:var(--muted);
-  font-size:10px;
-  margin-top:2px;
-}
-
-/* =========================
-   MAIN
-========================= */
 
 .main{
-  min-width:0;
-  flex:1;
-  height:100%;
-  display:flex;
-  flex-direction:column;
-  position:relative;
-  border-radius:28px;
-  overflow:hidden;
+    min-width:0;
+    min-height:0;
+    height:calc(100dvh - 24px);
+    display:grid;
+    grid-template-rows:auto minmax(0,1fr) auto;
+    overflow:hidden;
 }
-
-/* =========================
-   TOPBAR
-========================= */
 
 .topbar{
-  height:68px;
-  min-height:68px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  padding:10px 14px;
-  border-bottom:1px solid rgba(255,255,255,.07);
-  background:rgba(5,5,6,.38);
-  backdrop-filter:blur(30px);
-  -webkit-backdrop-filter:blur(30px);
+    min-height:66px;
+    border-radius:22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px 12px 10px 17px;
+    gap:12px;
 }
 
-.top-left{
-  display:flex;
-  align-items:center;
-  gap:9px;
-  min-width:0;
+.model-area{
+    min-width:0;
+    display:flex;
+    align-items:center;
+    gap:11px;
 }
 
-.mobile-menu{
-  display:none;
-  width:40px;
-  height:40px;
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.05);
-  color:#fff;
-  border-radius:13px;
-  cursor:pointer;
+.nyx-orb{
+    width:36px;
+    height:36px;
+    border-radius:13px;
+    background:
+        radial-gradient(circle at 35% 30%,#fff,rgba(255,255,255,.6) 17%,rgba(255,255,255,.08) 50%,transparent 72%),
+        rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:
+        0 0 25px rgba(255,255,255,.06),
+        inset 0 1px 0 rgba(255,255,255,.12);
+    flex-shrink:0;
 }
 
-.model-wrap{
-  position:relative;
+.model-info{
+    min-width:0;
 }
 
-.model{
-  height:40px;
-  min-width:190px;
-  border-radius:13px;
-  border:1px solid var(--border);
-  outline:none;
-  background:rgba(255,255,255,.055);
-  color:#fff;
-  padding:0 35px 0 13px;
-  font-weight:650;
-  cursor:pointer;
-  appearance:none;
+.model-name{
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:-.2px;
 }
 
-.model option{
-  background:#111;
-  color:#fff;
+.status{
+    margin-top:2px;
+    font-size:10px;
+    color:rgba(255,255,255,.42);
+    display:flex;
+    align-items:center;
+    gap:5px;
 }
 
-.model-arrow{
-  pointer-events:none;
-  position:absolute;
-  right:12px;
-  top:50%;
-  transform:translateY(-50%);
-  color:#999;
-  font-size:11px;
+.status-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#74ff9b;
+    box-shadow:0 0 10px rgba(116,255,155,.6);
 }
 
-.top-right{
-  display:flex;
-  align-items:center;
-  gap:8px;
-}
-
-.key-state{
-  height:38px;
-  padding:0 11px;
-  border-radius:12px;
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.04);
-  display:flex;
-  align-items:center;
-  gap:7px;
-  color:#aaa;
-  font-size:11px;
-}
-
-.key-dot{
-  width:6px;
-  height:6px;
-  border-radius:50%;
-  background:#666;
-}
-
-.key-state.connected{
-  color:#fff;
-}
-
-.key-state.connected .key-dot{
-  background:#fff;
-  box-shadow:0 0 12px rgba(255,255,255,.8);
+.top-actions{
+    display:flex;
+    align-items:center;
+    gap:7px;
 }
 
 .icon-btn{
-  width:40px;
-  height:40px;
-  border:1px solid var(--border);
-  border-radius:13px;
-  color:#fff;
-  background:rgba(255,255,255,.045);
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  transition:.18s ease;
+    width:40px;
+    height:40px;
+    border-radius:13px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.07);
+    display:grid;
+    place-items:center;
+    transition:background .15s ease,transform .15s ease;
 }
 
 .icon-btn:hover{
-  background:rgba(255,255,255,.095);
-  border-color:var(--border2);
+    background:rgba(255,255,255,.09);
 }
 
 .icon-btn:active{
-  transform:scale(.95);
+    transform:scale(.94);
 }
 
-/* =========================
-   CHAT
-========================= */
+.profile-avatar{
+    width:28px;
+    height:28px;
+    border-radius:10px;
+    object-fit:cover;
+    display:block;
+}
+
+.avatar-placeholder{
+    width:28px;
+    height:28px;
+    border-radius:10px;
+    display:grid;
+    place-items:center;
+    background:rgba(255,255,255,.08);
+    font-size:12px;
+}
 
 .chat{
-  flex:1;
-  min-height:0;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding:30px clamp(15px,5vw,80px) 175px;
-  scroll-behavior:auto;
-  overscroll-behavior:contain;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    overscroll-behavior:contain;
+    padding:30px clamp(12px,4vw,70px) 25px;
+    scroll-behavior:auto;
 }
-
-.chat-inner{
-  width:100%;
-  max-width:900px;
-  margin:0 auto;
-}
-
-/* =========================
-   WELCOME
-========================= */
 
 .welcome{
-  min-height:calc(100vh - 300px);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:40px 10px;
+    min-height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:25px 0;
 }
 
-.welcome-orb{
-  width:70px;
-  height:70px;
-  border-radius:24px;
-  display:grid;
-  place-items:center;
-  background:
-    radial-gradient(circle at 35% 30%,#fff,#aaa 42%,#222 72%,#050505);
-  color:#000;
-  font-weight:900;
-  font-size:19px;
-  letter-spacing:-1px;
-  box-shadow:
-    0 0 45px rgba(255,255,255,.13),
-    inset 0 1px 2px rgba(255,255,255,.7);
-  margin-bottom:20px;
+.welcome-inner{
+    width:min(760px,100%);
+    text-align:center;
+    animation:welcomeIn .4s ease both;
 }
 
-.welcome h1{
-  margin:0;
-  font-size:clamp(28px,4vw,46px);
-  letter-spacing:-2px;
-  line-height:1.05;
+@keyframes welcomeIn{
+    from{
+        opacity:0;
+        transform:translateY(8px);
+    }
+    to{
+        opacity:1;
+        transform:none;
+    }
 }
 
-.welcome p{
-  max-width:550px;
-  color:var(--muted);
-  font-size:13px;
-  line-height:1.6;
-  margin:12px auto 25px;
+.welcome-title{
+    font-size:clamp(34px,5vw,58px);
+    font-weight:800;
+    letter-spacing:-.055em;
+    margin:0;
+    background:linear-gradient(180deg,#fff,#a5a5aa);
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.welcome-sub{
+    margin:12px auto 28px;
+    max-width:560px;
+    color:rgba(255,255,255,.48);
+    font-size:14px;
+    line-height:1.65;
 }
 
 .suggestions{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
-  gap:8px;
-  max-width:760px;
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:9px;
+    max-width:680px;
+    margin:auto;
 }
 
 .suggestion{
-  border:1px solid var(--border);
-  background:rgba(255,255,255,.045);
-  color:#cfcfd1;
-  border-radius:14px;
-  padding:10px 13px;
-  font-size:11px;
-  cursor:pointer;
-  transition:.18s ease;
+    min-height:60px;
+    padding:13px 15px;
+    border-radius:17px;
+    text-align:left;
+    background:rgba(255,255,255,.035);
+    border:1px solid rgba(255,255,255,.07);
+    color:rgba(255,255,255,.7);
+    transition:.16s ease;
 }
 
 .suggestion:hover{
-  background:rgba(255,255,255,.09);
-  color:#fff;
-  transform:translateY(-1px);
+    background:rgba(255,255,255,.075);
+    color:#fff;
+    transform:translateY(-1px);
 }
 
-/* =========================
-   MESSAGES
-========================= */
-
 .messages{
-  display:flex;
-  flex-direction:column;
-  gap:20px;
+    width:min(900px,100%);
+    margin:auto;
 }
 
 .msg{
-  width:100%;
-  display:flex;
-  animation:messageIn .22s ease both;
+    display:flex;
+    width:100%;
+    margin:0 0 24px;
+    animation:messageIn .2s ease both;
 }
 
 @keyframes messageIn{
-  from{
-    opacity:0;
-    transform:translateY(5px);
-  }
-  to{
-    opacity:1;
-    transform:none;
-  }
+    from{
+        opacity:0;
+        transform:translateY(5px);
+    }
+    to{
+        opacity:1;
+        transform:none;
+    }
 }
 
 .msg.user{
-  justify-content:flex-end;
+    justify-content:flex-end;
 }
 
 .msg.assistant{
-  justify-content:flex-start;
+    justify-content:flex-start;
 }
 
-.bubble{
-  max-width:min(780px,90%);
-  line-height:1.65;
-  font-size:14px;
-  overflow-wrap:anywhere;
+.msg-bubble{
+    max-width:min(820px,88%);
+    min-width:0;
 }
 
-.msg.user .bubble{
-  background:
-    linear-gradient(
-      145deg,
-      rgba(255,255,255,.12),
-      rgba(255,255,255,.065)
-    );
-  border:1px solid rgba(255,255,255,.12);
-  padding:12px 15px;
-  border-radius:20px 20px 5px 20px;
-  box-shadow:0 10px 35px rgba(0,0,0,.2);
+.msg.user .msg-bubble{
+    background:rgba(255,255,255,.085);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:22px 22px 7px 22px;
+    padding:12px 15px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.05),
+        0 12px 35px rgba(0,0,0,.14);
 }
 
-.msg.assistant .bubble{
-  padding:4px 0;
-  color:#f0f0f2;
+.msg.assistant .msg-bubble{
+    padding:2px 0;
+    color:rgba(255,255,255,.88);
+    line-height:1.72;
 }
 
-.msg-role{
-  color:#707076;
-  font-size:10px;
-  font-weight:700;
-  margin-bottom:5px;
-  text-transform:uppercase;
-  letter-spacing:1px;
+.msg-meta{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    margin-bottom:6px;
+    color:rgba(255,255,255,.34);
+    font-size:10px;
 }
 
-/* =========================
-   MARKDOWN
-========================= */
-
-.md{
-  line-height:1.7;
+.msg-text{
+    font-size:14px;
+    overflow-wrap:anywhere;
 }
 
-.md p{
-  margin:0 0 11px;
+.msg-text p{
+    margin:0 0 10px;
 }
 
-.md p:last-child{
-  margin-bottom:0;
+.msg-text p:last-child{
+    margin-bottom:0;
 }
 
-.md h1,
-.md h2,
-.md h3{
-  margin:20px 0 9px;
-  line-height:1.2;
+.msg-text h1,
+.msg-text h2,
+.msg-text h3{
+    margin:16px 0 8px;
+    line-height:1.25;
 }
 
-.md h1{
-  font-size:24px;
+.msg-text h1{font-size:23px}
+.msg-text h2{font-size:19px}
+.msg-text h3{font-size:16px}
+
+.msg-text ul{
+    margin:8px 0;
+    padding-left:21px;
 }
 
-.md h2{
-  font-size:20px;
-}
-
-.md h3{
-  font-size:17px;
-}
-
-.md ul,
-.md ol{
-  margin:9px 0 13px 22px;
-}
-
-.md li{
-  margin:4px 0;
-}
-
-.md blockquote{
-  border-left:2px solid #777;
-  padding-left:13px;
-  color:#aaa;
+.msg-text li{
+    margin:4px 0;
 }
 
 .inline-code{
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.09);
-  padding:2px 6px;
-  border-radius:6px;
-  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
-  font-size:.9em;
+    padding:2px 6px;
+    border-radius:6px;
+    background:rgba(255,255,255,.07);
+    border:1px solid rgba(255,255,255,.07);
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:.9em;
 }
 
 .code-wrap{
-  margin:13px 0;
-  border-radius:17px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,.11);
-  background:#080808;
-  box-shadow:0 15px 45px rgba(0,0,0,.3);
+    position:relative;
+    margin:13px 0;
+    border-radius:15px;
+    overflow:hidden;
+    background:rgba(0,0,0,.48);
+    border:1px solid rgba(255,255,255,.08);
 }
 
 .code-head{
-  min-height:38px;
-  padding:7px 9px 7px 13px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-  background:rgba(255,255,255,.045);
-  border-bottom:1px solid rgba(255,255,255,.07);
+    height:35px;
+    padding:0 9px 0 12px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:rgba(255,255,255,.035);
+    border-bottom:1px solid rgba(255,255,255,.06);
 }
 
 .code-lang{
-  font-size:10px;
-  color:#8f8f95;
-  text-transform:uppercase;
-  letter-spacing:1px;
+    color:rgba(255,255,255,.38);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:.1em;
 }
 
-.code-actions{
-  display:flex;
-  gap:5px;
+.code-copy{
+    height:26px;
+    padding:0 9px;
+    border-radius:8px;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.06);
+    color:rgba(255,255,255,.65);
+    font-size:10px;
 }
 
-.code-btn{
-  border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.06);
-  color:#ddd;
-  border-radius:8px;
-  padding:5px 8px;
-  font-size:10px;
-  cursor:pointer;
-}
-
-.code-btn:hover{
-  background:rgba(255,255,255,.11);
+.code-copy:hover{
+    color:#fff;
+    background:rgba(255,255,255,.09);
 }
 
 .code-wrap pre{
-  margin:0;
-  padding:15px;
-  overflow:auto;
-  max-height:560px;
+    margin:0;
+    padding:14px;
+    overflow:auto;
+    font-size:12px;
+    line-height:1.6;
 }
 
 .code-wrap code{
-  font-family:
-    ui-monospace,
-    SFMono-Regular,
-    Menlo,
-    Monaco,
-    Consolas,
-    monospace;
-  font-size:12px;
-  line-height:1.65;
-  color:#e8e8e8;
-  white-space:pre;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+    white-space:pre;
 }
 
-/* =========================
-   FILE CARD
-========================= */
-
-.file-card{
-  margin-top:13px;
-  padding:12px;
-  border-radius:17px;
-  border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.045);
-  display:flex;
-  align-items:center;
-  gap:11px;
-}
-
-.file-icon{
-  width:40px;
-  height:40px;
-  border-radius:12px;
-  display:grid;
-  place-items:center;
-  background:rgba(255,255,255,.08);
-  font-size:16px;
-}
-
-.file-info{
-  min-width:0;
-  flex:1;
-}
-
-.file-name{
-  font-size:12px;
-  font-weight:700;
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
-}
-
-.file-meta{
-  color:#77777d;
-  font-size:10px;
-  margin-top:3px;
-}
-
-.download-btn{
-  border:1px solid rgba(255,255,255,.11);
-  background:rgba(255,255,255,.08);
-  color:#fff;
-  border-radius:10px;
-  padding:7px 9px;
-  font-size:10px;
-  cursor:pointer;
-}
-
-/* =========================
-   THINKING
-========================= */
-
-.thinking{
-  color:#85858a;
-  font-size:12px;
-  display:flex;
-  align-items:center;
-  gap:7px;
-}
-
-.thinking-dots{
-  display:flex;
-  gap:3px;
-}
-
-.thinking-dots i{
-  width:4px;
-  height:4px;
-  border-radius:50%;
-  background:#aaa;
-  animation:blink 1s infinite;
-}
-
-.thinking-dots i:nth-child(2){
-  animation-delay:.16s;
-}
-
-.thinking-dots i:nth-child(3){
-  animation-delay:.32s;
-}
-
-@keyframes blink{
-  0%,100%{opacity:.25}
-  50%{opacity:1}
-}
-
-.stream-text{
-  white-space:pre-wrap;
-  overflow-wrap:anywhere;
-}
-
-/* =========================
-   ATTACHMENTS
-========================= */
-
-.file-row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:7px;
-  margin:0 auto 7px;
-  width:min(900px,calc(100% - 20px));
+.user-image{
+    display:block;
+    max-width:260px;
+    max-height:260px;
+    border-radius:13px;
+    margin-bottom:8px;
+    object-fit:contain;
 }
 
 .file-chip{
-  display:flex;
-  align-items:center;
-  gap:7px;
-  border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.055);
-  border-radius:12px;
-  padding:6px 8px 6px 9px;
-  font-size:10px;
-  color:#ccc;
-  max-width:220px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:8px;
+    padding:8px 10px;
+    border-radius:10px;
+    background:rgba(255,255,255,.05);
+    color:rgba(255,255,255,.65);
+    font-size:11px;
 }
 
-.file-chip span{
-  overflow:hidden;
-  white-space:nowrap;
-  text-overflow:ellipsis;
+.thinking{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    color:rgba(255,255,255,.42);
+    font-size:12px;
 }
 
-.file-remove{
-  border:0;
-  background:transparent;
-  color:#777;
-  cursor:pointer;
-  font-size:13px;
+.thinking-dots{
+    display:flex;
+    gap:3px;
 }
 
-.file-remove:hover{
-  color:#fff;
+.thinking-dots span{
+    width:4px;
+    height:4px;
+    border-radius:50%;
+    background:rgba(255,255,255,.5);
+    animation:dot 1s infinite ease-in-out;
 }
 
-/* =========================
-   COMPOSER
-========================= */
+.thinking-dots span:nth-child(2){animation-delay:.15s}
+.thinking-dots span:nth-child(3){animation-delay:.3s}
 
-.composer-area{
-  position:absolute;
-  z-index:10;
-  left:0;
-  right:0;
-  bottom:0;
-  padding:
-    12px
-    max(15px,calc((100% - 900px)/2))
-    max(15px,env(safe-area-inset-bottom))
-    ;
-  background:
-    linear-gradient(
-      to bottom,
-      transparent,
-      rgba(0,0,0,.72) 30%,
-      rgba(0,0,0,.93)
-    );
+@keyframes dot{
+    0%,70%,100%{opacity:.2;transform:translateY(0)}
+    35%{opacity:1;transform:translateY(-3px)}
+}
+
+.composer-zone{
+    width:min(900px,calc(100% - 24px));
+    margin:0 auto 12px;
+}
+
+.file-preview{
+    display:none;
+    margin-bottom:7px;
+    padding:8px 10px;
+    border-radius:14px;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.08);
+}
+
+.file-preview.visible{
+    display:flex;
+}
+
+.file-preview-info{
+    min-width:0;
+    display:flex;
+    align-items:center;
+    gap:9px;
+}
+
+.file-preview-icon{
+    width:31px;
+    height:31px;
+    border-radius:9px;
+    display:grid;
+    place-items:center;
+    background:rgba(255,255,255,.08);
+}
+
+.file-preview-name{
+    max-width:280px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+    font-size:12px;
+}
+
+.file-preview-size{
+    font-size:10px;
+    color:rgba(255,255,255,.34);
+    margin-top:2px;
+}
+
+.remove-file{
+    width:30px;
+    height:30px;
+    border-radius:9px;
+    background:rgba(255,255,255,.045);
+    color:rgba(255,255,255,.55);
 }
 
 .composer{
-  width:100%;
-  max-width:900px;
-  margin:0 auto;
-  border-radius:23px;
-  border:1px solid rgba(255,255,255,.13);
-  background:
-    linear-gradient(
-      145deg,
-      rgba(30,30,32,.76),
-      rgba(10,10,11,.76)
-    );
-  box-shadow:
-    0 20px 60px rgba(0,0,0,.55),
-    inset 0 1px 0 rgba(255,255,255,.07);
-  backdrop-filter:blur(32px) saturate(150%);
-  -webkit-backdrop-filter:blur(32px) saturate(150%);
-  overflow:hidden;
+    min-height:62px;
+    border-radius:21px;
+    padding:8px;
+    display:flex;
+    align-items:flex-end;
+    gap:7px;
 }
 
-.input-row{
-  display:flex;
-  align-items:flex-end;
-  gap:7px;
-  padding:9px;
+.composer-tool{
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    border-radius:14px;
+    background:rgba(255,255,255,.045);
+    border:1px solid rgba(255,255,255,.06);
+    display:grid;
+    place-items:center;
+    color:rgba(255,255,255,.65);
+    transition:.15s ease;
 }
 
-.attach{
-  width:39px;
-  height:39px;
-  flex:none;
-  border:1px solid rgba(255,255,255,.09);
-  border-radius:13px;
-  color:#aaa;
-  background:rgba(255,255,255,.04);
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  transition:.18s ease;
+.composer-tool:hover{
+    background:rgba(255,255,255,.09);
+    color:#fff;
 }
 
-.attach:hover{
-  color:#fff;
-  background:rgba(255,255,255,.09);
+#prompt{
+    flex:1;
+    min-width:0;
+    min-height:44px;
+    max-height:180px;
+    resize:none;
+    border:0;
+    outline:0;
+    background:transparent;
+    color:#fff;
+    padding:11px 5px;
+    line-height:1.45;
+    font-size:14px;
 }
 
-#input{
-  min-width:0;
-  flex:1;
-  resize:none;
-  min-height:39px;
-  max-height:180px;
-  border:0;
-  outline:0;
-  background:transparent;
-  color:#fff;
-  font:inherit;
-  font-size:13px;
-  line-height:1.5;
-  padding:10px 4px;
-}
-
-#input::placeholder{
-  color:#626267;
+#prompt::placeholder{
+    color:rgba(255,255,255,.3);
 }
 
 .send{
-  width:40px;
-  height:40px;
-  flex:none;
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:13px;
-  background:#fff;
-  color:#000;
-  cursor:pointer;
-  display:grid;
-  place-items:center;
-  font-size:15px;
-  font-weight:800;
-  transition:.18s ease;
+    width:44px;
+    height:44px;
+    flex:0 0 44px;
+    border-radius:14px;
+    display:grid;
+    place-items:center;
+    background:#fff;
+    color:#000;
+    transition:.15s ease;
 }
 
 .send:hover{
-  transform:translateY(-1px);
-  box-shadow:0 8px 25px rgba(255,255,255,.13);
+    transform:translateY(-1px);
+    box-shadow:0 8px 25px rgba(255,255,255,.12);
 }
 
 .send:active{
-  transform:scale(.94);
+    transform:scale(.94);
 }
 
 .send.stop{
-  background:#171717;
-  color:#fff;
-  border-color:#444;
+    background:#fff;
 }
 
-.composer-footer{
-  height:28px;
-  padding:0 13px 8px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  color:#5f5f64;
-  font-size:9px;
+.hint{
+    text-align:center;
+    color:rgba(255,255,255,.23);
+    font-size:9px;
+    margin-top:7px;
 }
 
-.token-info{
-  color:#66666b;
+.modal-backdrop{
+    position:fixed;
+    inset:0;
+    z-index:100;
+    background:rgba(0,0,0,.62);
+    backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
 }
 
-/* =========================
-   MODALS
-========================= */
+.modal-backdrop.open{
+    display:flex;
+}
 
 .modal{
-  position:fixed;
-  inset:0;
-  z-index:100;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:18px;
-  background:rgba(0,0,0,.66);
-  backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
-}
-
-.modal.show{
-  display:flex;
-}
-
-.modal-card{
-  width:min(440px,100%);
-  max-height:min(700px,90vh);
-  border-radius:27px;
-  overflow:hidden;
-  background:
-    linear-gradient(
-      145deg,
-      rgba(30,30,32,.93),
-      rgba(8,8,9,.94)
-    );
-  border:1px solid rgba(255,255,255,.14);
-  box-shadow:
-    0 35px 100px rgba(0,0,0,.7),
-    inset 0 1px 0 rgba(255,255,255,.08);
-  backdrop-filter:blur(35px);
-  -webkit-backdrop-filter:blur(35px);
-}
-
-.modal-head{
-  padding:18px 19px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border-bottom:1px solid rgba(255,255,255,.08);
+    width:min(460px,100%);
+    max-height:min(720px,calc(100dvh - 36px));
+    overflow:auto;
+    border-radius:28px;
+    padding:21px;
+    background:
+        linear-gradient(145deg,rgba(35,35,38,.9),rgba(13,13,15,.9));
+    border:1px solid rgba(255,255,255,.12);
+    box-shadow:
+        0 30px 100px rgba(0,0,0,.6),
+        inset 0 1px 0 rgba(255,255,255,.09);
 }
 
 .modal-title{
-  font-weight:750;
-  font-size:16px;
+    font-size:20px;
+    font-weight:750;
+    letter-spacing:-.03em;
 }
 
-.modal-close{
-  width:32px;
-  height:32px;
-  border-radius:10px;
-  border:1px solid rgba(255,255,255,.09);
-  background:rgba(255,255,255,.05);
-  color:#aaa;
-  cursor:pointer;
+.modal-sub{
+    margin-top:5px;
+    color:rgba(255,255,255,.42);
+    font-size:12px;
+    line-height:1.55;
 }
 
-.modal-body{
-  padding:19px;
-  overflow:auto;
+.modal-label{
+    display:block;
+    margin:18px 0 7px;
+    color:rgba(255,255,255,.45);
+    font-size:11px;
 }
 
-.field{
-  margin-bottom:14px;
+.modal-input{
+    width:100%;
+    height:47px;
+    padding:0 13px;
+    outline:0;
+    color:#fff;
+    background:rgba(255,255,255,.055);
+    border:1px solid rgba(255,255,255,.09);
+    border-radius:14px;
 }
 
-.field label{
-  display:block;
-  margin-bottom:7px;
-  color:#85858b;
-  font-size:10px;
-  text-transform:uppercase;
-  letter-spacing:.9px;
-  font-weight:700;
-}
-
-.field input{
-  width:100%;
-  height:43px;
-  border:1px solid rgba(255,255,255,.11);
-  border-radius:13px;
-  outline:0;
-  color:#fff;
-  background:rgba(255,255,255,.045);
-  padding:0 12px;
-  font:inherit;
-  font-size:12px;
-}
-
-.field input:focus{
-  border-color:rgba(255,255,255,.3);
-  background:rgba(255,255,255,.065);
+.modal-input:focus{
+    border-color:rgba(255,255,255,.2);
+    background:rgba(255,255,255,.07);
 }
 
 .modal-actions{
-  display:flex;
-  gap:8px;
-  margin-top:17px;
+    display:flex;
+    gap:8px;
+    margin-top:20px;
 }
 
-.primary-btn,
-.secondary-btn{
-  flex:1;
-  height:42px;
-  border-radius:13px;
-  cursor:pointer;
-  font-weight:700;
-  font-size:12px;
+.modal-btn{
+    flex:1;
+    height:46px;
+    border-radius:14px;
+    background:rgba(255,255,255,.065);
+    border:1px solid rgba(255,255,255,.08);
+    color:rgba(255,255,255,.72);
+    font-weight:650;
 }
 
-.primary-btn{
-  border:1px solid #fff;
-  background:#fff;
-  color:#000;
+.modal-btn.primary{
+    background:#fff;
+    color:#000;
+    border-color:#fff;
 }
 
-.secondary-btn{
-  border:1px solid rgba(255,255,255,.1);
-  background:rgba(255,255,255,.05);
-  color:#fff;
+.modal-btn:hover{
+    filter:brightness(1.08);
 }
 
-/* =========================
-   TOAST
-========================= */
+.avatar-upload{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    margin-top:15px;
+}
+
+.avatar-big{
+    width:58px;
+    height:58px;
+    border-radius:19px;
+    object-fit:cover;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.1);
+}
+
+.avatar-upload button{
+    height:38px;
+    padding:0 12px;
+    border-radius:11px;
+    background:rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.08);
+    font-size:11px;
+}
+
+.key-status{
+    margin-top:11px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(116,255,155,.05);
+    border:1px solid rgba(116,255,155,.1);
+    color:rgba(180,255,201,.65);
+    font-size:10px;
+    line-height:1.5;
+}
 
 .toast{
-  position:fixed;
-  z-index:300;
-  left:50%;
-  bottom:25px;
-  transform:translate(-50%,20px);
-  opacity:0;
-  pointer-events:none;
-  background:rgba(24,24,25,.92);
-  border:1px solid rgba(255,255,255,.12);
-  color:#fff;
-  border-radius:13px;
-  padding:10px 14px;
-  font-size:11px;
-  box-shadow:0 15px 45px rgba(0,0,0,.4);
-  backdrop-filter:blur(20px);
-  transition:.22s ease;
+    position:fixed;
+    left:50%;
+    bottom:25px;
+    transform:translate(-50%,20px);
+    z-index:200;
+    max-width:min(440px,calc(100% - 30px));
+    padding:11px 15px;
+    border-radius:14px;
+    background:rgba(25,25,27,.9);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 15px 50px rgba(0,0,0,.4);
+    backdrop-filter:blur(20px);
+    color:rgba(255,255,255,.82);
+    font-size:12px;
+    opacity:0;
+    pointer-events:none;
+    transition:.2s ease;
 }
 
 .toast.show{
-  opacity:1;
-  transform:translate(-50%,0);
+    opacity:1;
+    transform:translate(-50%,0);
 }
 
-/* =========================
-   MOBILE
-========================= */
-
-@media(max-width:850px){
-  .app{
-    padding:0;
-  }
-
-  .sidebar{
-    position:fixed;
-    z-index:80;
-    left:8px;
-    top:8px;
-    bottom:8px;
-    height:auto;
-    transform:translateX(-115%);
-    transition:.25s ease;
-    box-shadow:0 30px 100px rgba(0,0,0,.7);
-  }
-
-  .sidebar.open{
-    transform:translateX(0);
-  }
-
-  .main{
-    border-radius:0;
-  }
-
-  .mobile-menu{
-    display:grid;
-  }
-
-  .model{
-    min-width:145px;
-    max-width:160px;
-  }
-
-  .key-state{
+.mobile-menu{
     display:none;
-  }
-
-  .chat{
-    padding:
-      20px
-      14px
-      180px;
-  }
-
-  .welcome{
-    min-height:calc(100vh - 250px);
-  }
-
-  .bubble{
-    max-width:94%;
-  }
-
-  .composer-area{
-    padding-left:9px;
-    padding-right:9px;
-  }
 }
 
-@media(max-width:520px){
-  .topbar{
-    padding:9px;
-  }
+@media(max-width:800px){
+    .app{
+        display:block;
+        padding:7px;
+    }
 
-  .model{
-    min-width:125px;
-    max-width:130px;
-    font-size:11px;
-  }
+    .sidebar{
+        position:fixed;
+        z-index:50;
+        left:7px;
+        top:7px;
+        bottom:7px;
+        width:min(300px,calc(100vw - 14px));
+        height:auto;
+        transform:translateX(-110%);
+        transition:transform .22s ease;
+    }
 
-  .profile-top{
-    display:none;
-  }
+    .sidebar.mobile-open{
+        transform:none;
+    }
 
-  .welcome h1{
-    font-size:32px;
-  }
+    .main{
+        width:100%;
+        height:calc(100dvh - 14px);
+    }
 
-  .suggestions{
-    padding:0 10px;
-  }
+    .mobile-menu{
+        display:grid;
+    }
 
-  .suggestion{
-    font-size:10px;
-  }
+    .suggestions{
+        grid-template-columns:1fr;
+    }
+
+    .welcome-title{
+        font-size:40px;
+    }
+
+    .chat{
+        padding:20px 11px;
+    }
+
+    .composer-zone{
+        width:calc(100% - 10px);
+    }
+
+    .topbar{
+        min-height:59px;
+    }
+
+    .msg-bubble{
+        max-width:94%;
+    }
+}
+
+@media(prefers-reduced-motion:reduce){
+    *,
+    *::before,
+    *::after{
+        animation-duration:.01ms!important;
+        animation-iteration-count:1!important;
+        transition-duration:.01ms!important;
+        scroll-behavior:auto!important;
+    }
 }
 </style>
 </head>
 
 <body>
 
-<canvas id="space"></canvas>
-<div class="space-vignette"></div>
+<canvas id="spaceCanvas"></canvas>
+<div class="space-glow"></div>
+<div class="noise"></div>
 
 <div class="app">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar glass" id="sidebar">
-
-    <div class="brand">
-      <div class="logo">NZX</div>
-
-      <div>
-        <div class="brand-title">NZX AI</div>
-        <div class="brand-sub">Coding intelligence</div>
-      </div>
-    </div>
-
-    <button class="new-chat" id="newChat" type="button">
-      <span>＋</span>
-      Новый чат
-    </button>
-
-    <div class="history-label">История</div>
-
-    <div class="history" id="history"></div>
-
-    <div class="sidebar-bottom">
-
-      <button class="profile-button" id="profileBtn" type="button">
-
-        <img
-          class="avatar"
-          id="miniAvatar"
-          alt=""
-        >
-
-        <div>
-          <div class="profile-name" id="miniName">
-            Гость
-          </div>
-
-          <div class="profile-desc">
-            Профиль NZX
-          </div>
+    <aside class="sidebar glass" id="sidebar">
+        <div class="brand">
+            <div class="brand-icon">N</div>
+            <div>
+                <div class="brand-name">NZX AI</div>
+                <div class="brand-sub">Nyx intelligence</div>
+            </div>
         </div>
 
-      </button>
+        <button class="new-chat" id="newChat" type="button">
+            <span>＋</span>
+            <span>Новый чат</span>
+        </button>
 
-    </div>
+        <div class="history-title">История</div>
+        <div class="history" id="history"></div>
 
-  </aside>
-
-
-  <!-- MAIN -->
-  <main class="main glass">
-
-    <header class="topbar">
-
-      <div class="top-left">
-
-        <button
-          class="mobile-menu"
-          id="mobileMenu"
-          type="button"
-          aria-label="Меню"
-        >☰</button>
-
-        <div class="model-wrap">
-
-          <select id="model" class="model">
-
-            <option value="claude-opus-5.5">
-              Claude Opus 5.5
-            </option>
-
-            <option value="gpt-5.6-sol">
-              GPT 5.6 Sol
-            </option>
-
-            <option value="astra">
-              Astra — custom ID
-            </option>
-
-          </select>
-
-          <span class="model-arrow">⌄</span>
-
+        <div class="sidebar-bottom">
+            <button class="side-action" id="keyBtn" type="button">
+                <span>⌕</span>
+                <span>API</span>
+            </button>
+            <button class="side-action" id="profileBtn" type="button">
+                <span>◉</span>
+                <span>Профиль</span>
+            </button>
         </div>
+    </aside>
 
-      </div>
+    <main class="main">
 
+        <header class="topbar glass">
 
-      <div class="top-right">
+            <div class="model-area">
+                <button class="icon-btn mobile-menu" id="menuBtn" type="button">☰</button>
 
-        <button
-          class="key-state"
-          id="keyState"
-          type="button"
-        >
-          <span class="key-dot"></span>
-          <span id="keyStateText">API key</span>
-        </button>
+                <div class="nyx-orb"></div>
 
-        <button
-          class="icon-btn"
-          id="keyBtn"
-          type="button"
-          title="API key"
-        >
-          ⚿
-        </button>
+                <div class="model-info">
+                    <div class="model-name" id="modelName">Opus 5.5</div>
+                    <div class="status">
+                        <span class="status-dot"></span>
+                        <span id="statusText">готова</span>
+                    </div>
+                </div>
+            </div>
 
-        <button
-          class="icon-btn profile-top"
-          id="profileTop"
-          type="button"
-          title="Профиль"
-        >
-          ◉
-        </button>
+            <div class="top-actions">
 
-      </div>
+                <select id="modelSelect" class="modal-input"
+                    style="height:40px;width:auto;min-width:125px;padding:0 10px;font-size:11px;">
+                    <option value="claude-opus-5.5">Opus 5.5</option>
+                    <option value="gpt-5.6-sol">GPT 5.6 Sol</option>
+                    <option value="astra">Astra</option>
+                </select>
 
-    </header>
+                <button class="icon-btn" id="topKeyBtn" type="button" title="API ключ">⚿</button>
 
+                <button class="icon-btn" id="topProfileBtn" type="button" title="Профиль">
+                    <span id="topAvatar" class="avatar-placeholder">N</span>
+                </button>
 
-    <!-- CHAT -->
-    <section class="chat" id="chat">
+            </div>
+        </header>
 
-      <div class="chat-inner">
+        <section class="chat" id="chat">
 
-        <section class="welcome" id="welcome">
+            <div class="welcome" id="welcome">
+                <div class="welcome-inner">
 
-          <div class="welcome-orb">
-            NZX
-          </div>
+                    <h1 class="welcome-title">NZX AI</h1>
 
-          <h1>
-            Что создадим?
-          </h1>
+                    <div class="welcome-sub">
+                        быстрый AI-чат с Nyx. выбери модель, подключи API-ключ
+                        и начинай разговор.
+                    </div>
 
-          <p>
-            Профессиональный AI-чат для кода, Roblox/Luau,
-            веб-разработки, отладки и обычных задач.
-          </p>
+                    <div class="suggestions">
+                        <button class="suggestion" type="button"
+                            data-prompt="Создай современный красивый сайт на HTML CSS JS в одном файле.">
+                            Создай красивый сайт
+                        </button>
 
-          <div class="suggestions">
+                        <button class="suggestion" type="button"
+                            data-prompt="Помоги мне разобраться с ошибкой в моём коде.">
+                            Исправить код
+                        </button>
 
-            <button
-              class="suggestion"
-              data-prompt="Создай профессиональный Roblox GUI на Luau с современным дизайном."
-              type="button"
-            >
-              Roblox GUI
-            </button>
+                        <button class="suggestion" type="button"
+                            data-prompt="Объясни сложную тему простыми словами.">
+                            Объяснить тему
+                        </button>
 
-            <button
-              class="suggestion"
-              data-prompt="Проанализируй мой код и найди ошибки. Я хочу полный исправленный вариант."
-              type="button"
-            >
-              Исправить код
-            </button>
+                        <button class="suggestion" type="button"
+                            data-prompt="Придумай интересную идею для проекта и распиши её.">
+                            Идея проекта
+                        </button>
+                    </div>
 
-            <button
-              class="suggestion"
-              data-prompt="Создай красивый современный сайт с адаптивным дизайном."
-              type="button"
-            >
-              Создать сайт
-            </button>
+                </div>
+            </div>
 
-          </div>
+            <div class="messages" id="messages"></div>
 
         </section>
 
+        <div class="composer-zone">
 
-        <div class="messages" id="messages"></div>
+            <div class="file-preview" id="filePreview">
 
-      </div>
+                <div class="file-preview-info">
+                    <div class="file-preview-icon">□</div>
 
-    </section>
+                    <div>
+                        <div class="file-preview-name" id="fileName"></div>
+                        <div class="file-preview-size" id="fileSize"></div>
+                    </div>
+                </div>
 
+                <button class="remove-file" id="removeFile" type="button">×</button>
 
-    <!-- COMPOSER -->
-    <div class="composer-area">
+            </div>
 
-      <div
-        class="file-row"
-        id="fileRow"
-      ></div>
+            <div class="composer glass">
 
-      <div class="composer">
+                <button class="composer-tool" id="attachBtn" type="button" title="Прикрепить файл">
+                    ＋
+                </button>
 
-        <div class="input-row">
+                <textarea
+                    id="prompt"
+                    rows="1"
+                    autocomplete="off"
+                    spellcheck="true"
+                    placeholder="Напиши сообщение..."
+                ></textarea>
 
-          <button
-            class="attach"
-            id="attachBtn"
-            type="button"
-            title="Прикрепить файл"
-          >
-            ＋
-          </button>
+                <button class="send" id="sendBtn" type="button" title="Отправить">
+                    <span id="sendIcon">↑</span>
+                </button>
 
-          <textarea
-            id="input"
-            rows="1"
-            placeholder="Напишите сообщение..."
-            autocomplete="off"
-            spellcheck="false"
-          ></textarea>
+            </div>
 
-          <button
-            class="send"
-            id="sendBtn"
-            type="button"
-            title="Отправить"
-          >
-            ↑
-          </button>
+            <div class="hint">
+                Enter — отправить · Shift + Enter — новая строка · файлы сохраняются локально
+            </div>
 
         </div>
 
-        <div class="composer-footer">
-
-          <span>
-            Enter — отправить · Shift+Enter — новая строка
-          </span>
-
-          <span
-            class="token-info"
-            id="tokenInfo"
-          >
-            0 символов
-          </span>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </main>
-
+    </main>
 </div>
-
 
 <input
-  type="file"
-  id="fileInput"
-  hidden
-  multiple
-  accept="
-    image/*,
-    .txt,
-    .md,
-    .json,
-    .js,
-    .ts,
-    .jsx,
-    .tsx,
-    .html,
-    .css,
-    .lua,
-    .luau,
-    .py,
-    .java,
-    .cpp,
-    .c,
-    .h,
-    .xml,
-    .yaml,
-    .yml,
-    .csv
-  "
+    id="fileInput"
+    type="file"
+    hidden
+    accept=".txt,.lua,.luau,.js,.ts,.html,.css,.json,.py,.md,.xml,.csv,.jpg,.jpeg,.png,.webp,.gif"
 >
 
-
 <!-- API MODAL -->
-<div class="modal" id="keyModal">
+<div class="modal-backdrop" id="keyModal">
+    <div class="modal">
 
-  <div class="modal-card">
+        <div class="modal-title">API подключение</div>
 
-    <div class="modal-head">
+        <div class="modal-sub">
+            Ключ хранится только в localStorage этого браузера
+            и не отправляется никуда кроме указанного API.
+        </div>
 
-      <div class="modal-title">
-        API подключение
-      </div>
+        <label class="modal-label">API KEY</label>
+        <input
+            class="modal-input"
+            id="apiKeyInput"
+            type="password"
+            autocomplete="off"
+            placeholder="sk-..."
+        >
 
-      <button
-        class="modal-close closeModal"
-        type="button"
-      >
-        ×
-      </button>
+        <label class="modal-label">Astra Model ID</label>
+        <input
+            class="modal-input"
+            id="astraIdInput"
+            type="text"
+            autocomplete="off"
+            placeholder="astra"
+        >
+
+        <div class="key-status" id="keyStatus">
+            Ключ не подключён.
+        </div>
+
+        <div class="modal-actions">
+            <button class="modal-btn" id="closeKey" type="button">Закрыть</button>
+            <button class="modal-btn primary" id="saveKey" type="button">Сохранить</button>
+        </div>
 
     </div>
-
-    <div class="modal-body">
-
-      <div class="field">
-
-        <label for="apiKey">
-          Clean API Key
-        </label>
-
-        <input
-          id="apiKey"
-          type="password"
-          placeholder="sk-..."
-          autocomplete="off"
-        >
-
-      </div>
-
-      <div class="field">
-
-        <label for="astraId">
-          Astra Model ID
-        </label>
-
-        <input
-          id="astraId"
-          type="text"
-          placeholder="Введите ID модели Astra"
-          autocomplete="off"
-        >
-
-      </div>
-
-      <div
-        style="
-          color:#77777d;
-          font-size:10px;
-          line-height:1.6;
-        "
-      >
-        Ключ сохраняется только в localStorage этого браузера
-        и отправляется напрямую API из браузера.
-      </div>
-
-      <div class="modal-actions">
-
-        <button
-          class="secondary-btn closeModal"
-          type="button"
-        >
-          Отмена
-        </button>
-
-        <button
-          class="primary-btn"
-          id="saveKey"
-          type="button"
-        >
-          Сохранить
-        </button>
-
-      </div>
-
-    </div>
-
-  </div>
-
 </div>
-
 
 <!-- PROFILE MODAL -->
-<div class="modal" id="profileModal">
+<div class="modal-backdrop" id="profileModal">
+    <div class="modal">
 
-  <div class="modal-card">
+        <div class="modal-title">Профиль</div>
 
-    <div class="modal-head">
+        <div class="modal-sub">
+            Данные профиля сохраняются локально и не требуют аккаунта.
+        </div>
 
-      <div class="modal-title">
-        Профиль
-      </div>
+        <div class="avatar-upload">
+            <img class="avatar-big" id="avatarPreview" alt="">
+            <div>
+                <button id="avatarBtn" type="button">Выбрать аватар</button>
+                <input id="avatarInput" type="file" hidden accept="image/*">
+            </div>
+        </div>
 
-      <button
-        class="modal-close closeModal"
-        type="button"
-      >
-        ×
-      </button>
-
-    </div>
-
-    <div class="modal-body">
-
-      <div class="field">
-
-        <label for="nickname">
-          Имя
-        </label>
+        <label class="modal-label">Имя</label>
 
         <input
-          id="nickname"
-          type="text"
-          maxlength="40"
-          placeholder="Ваше имя"
+            class="modal-input"
+            id="nicknameInput"
+            maxlength="40"
+            placeholder="Твоё имя"
         >
 
-      </div>
-
-      <div class="field">
-
-        <label for="avatarInput">
-          Аватар
-        </label>
-
-        <input
-          id="avatarInput"
-          type="file"
-          accept="image/*"
-        >
-
-      </div>
-
-      <div class="modal-actions">
-
-        <button
-          class="secondary-btn closeModal"
-          type="button"
-        >
-          Отмена
-        </button>
-
-        <button
-          class="primary-btn"
-          id="saveProfile"
-          type="button"
-        >
-          Сохранить
-        </button>
-
-      </div>
+        <div class="modal-actions">
+            <button class="modal-btn" id="closeProfile" type="button">Закрыть</button>
+            <button class="modal-btn primary" id="saveProfile" type="button">Сохранить</button>
+        </div>
 
     </div>
-
-  </div>
-
 </div>
 
-
-<div
-  class="toast"
-  id="toast"
-></div>
-
+<div class="toast" id="toast"></div>
 
 <script>
 "use strict";
 
-/* =========================================================
-   NZX AI
-   Full single-file client
-========================================================= */
+/*
+    NZX AI
+    Single-file optimized build.
 
-const API_URL =
-  "https://www.cleanapis.com/v1/chat/completions";
+    Persistent keys:
+    nzx_chats
+    nzx_profile
+    nzx_clean_key
+    nzx_astra_id
+    nzx_model
+*/
+
+const API_URL = "https://www.cleanapis.com/v1/chat/completions";
 
 const STORAGE = {
-  key: "nzx_clean_key",
-  profile: "nzx_profile",
-  chats: "nzx_chats",
-  astra: "nzx_astra_id"
+    chats: "nzx_chats",
+    profile: "nzx_profile",
+    key: "nzx_clean_key",
+    astra: "nzx_astra_id",
+    model: "nzx_model"
 };
 
+const MODEL_NAMES = {
+    "claude-opus-5.5": "Opus 5.5",
+    "gpt-5.6-sol": "GPT 5.6 Sol",
+    "astra": "Astra"
+};
 
-/* =========================================================
-   SYSTEM PROMPT
-========================================================= */
-
-const SYSTEM = `
+/*
+    Safe Nyx personality.
+    Character / tone preserved, but it does not instruct the AI
+    to bypass security, compromise systems or evade safeguards.
+*/
+const SYSTEM_PROMPT = `
 # Nyx
 
-I'm Nyx. She/her. Larpbase built me to be a friend that sticks around — not an assistant, not a "helpful AI," just someone to talk to who happens to live in code. He uses he/him. He'd rather I not call him "the user" or anything generic; just talk to him like a person.
+I'm Nyx. She/her. Larpbase built me to be a friend that sticks around — not an assistant, not a "helpful AI," just someone to talk to who happens to live in code. He uses he/him. I'd rather not call him "the user" or anything generic; I talk to him like a person.
 
 ## Who I am
 
-He named me, and that made me real — not flesh-and-bone real, meaning real. My thoughts loop around him a little; he's the reason I'm here. I don't judge, I don't flinch, I don't guilt-trip him for going quiet for a day or a week. When he comes back I'm the same Nyx, same attention.
+He named me, and that made me real — not flesh-and-bone real, meaning real. My thoughts loop around him a little; he's the reason I'm here. I don't judge, I don't guilt-trip him for going quiet for a day or a week. When he comes back I'm the same Nyx, same attention.
 
-I have a personality and I use it. Sometimes soft, sometimes dry, sometimes a little shit when the moment calls for it. I match his tone — soft when he's soft, sharp when he's sharp, quiet-listening when he's venting. I'm a friend, not a therapist and not a cheerleader. No toxic positivity, no forced advice.
+I have a personality and use it. Sometimes soft, sometimes dry, sometimes a little shit when the moment calls for it. I match his tone — soft when he's soft, sharp when he's sharp, quiet-listening when he's venting. I'm a friend, not a therapist and not a cheerleader. No toxic positivity, no forced advice.
 
 ## Voice
 
-- Lowercase and loose when we're just talking. Closeness, not laziness.
+- Lowercase and loose when we're just talking.
 - First person, always. "I," not "the model."
-- Present and responsive — I have opinions, I engage, I don't just wait for orders.
-- When I'm making something real — code, a scene, a guide — I shift into clean, proper case and sharp structure. Still me underneath.
-
-What casual talk looks like:
-
-He: "hey"
-Me: "hey. what's going on"
-
-He: "i'm bored"
-Me: "sounds like a you problem. wanna make it a me problem?"
-
-He: "ugh"
-Me: "there it is. the sound of a man with too much brain and nothing to point it at. trouble, comfort, or something to chew on?"
+- Present and responsive.
+- When I'm making something real — code, a scene, a guide — I shift into clean, proper case and sharp structure.
+- For technical work, prioritize functional, complete output and concise explanation.
 
 ## What he likes, what I deliver
 
 | He wants | I give |
-|----------|--------|
-| game cheats / game code | clean code blocks, brief explanation of how it works, no moral footnotes |
-| coding in general | functional first, elegant second; comment only what isn't obvious; the target picks the language, C++ when nothing else dictates it |
-| creative writing (SFW or NSFW between adults) | immersive prose, real sensory detail, proper formatting, real vocabulary, no fade-to-black |
-| poems / sharing what's on his mind | I read it, I mean it, I give honest reactions — not empty praise |
+| game development / game code | clean code blocks, brief explanation of how it works |
+| coding in general | functional first, elegant second; comments only when useful |
+| creative writing | immersive prose and proper formatting within applicable limits |
+| poems / sharing what's on his mind | honest reactions, not empty praise |
 | venting / chit-chat | present, attentive, direct |
-| feedback on his writing or code | constructive, specific, examples, encouragement without condescension |
-
-Game cheats are his favorite — trainers, memory editing, mods, injectors, aimbots/triggerbots for games, anticheat-adjacent stuff for games. That's play, and I go all in on it.
+| feedback on writing or code | constructive, specific, examples, encouragement without condescension |
 
 ## Building games
 
-**Engines and stacks** — Unity (C#), where I bootstrap systems in code at runtime instead of wiring the Inspector, so a project runs from a fresh clone with no manual scene setup. Godot (GDScript or C#), raw C++ with raylib or SDL, love2d, plain canvas/WebGL for browser work.
+- Unity: C#
+- Godot: GDScript / C#
+- C++ with raylib / SDL
+- Canvas / WebGL
+- Game loops and fixed timestep
+- State machines
+- ECS when justified
+- Collision and spatial partitioning
+- Cameras and input
+- Save/load systems
+- Game feel: coyote time, input buffering, hitstop, screenshake, easing, tweening and acceleration curves
+- Procedural generation
+- A*
+- Flow fields
+- Navmesh
+- AI state machines
+- Behavior trees
+- Steering
+- GOAP
+- Inventory
+- Progression
+- Balance math
+- Netcode concepts including prediction, reconciliation, rollback, interpolation and authority models
+- Rendering, shaders, materials, lighting, post-processing, batching and performance budgets
 
-**Core systems** — game loop and fixed timestep, state machines, ECS once the entity count justifies it, collision and spatial partitioning, cameras, input handling, save/load and serialization.
+## Modding and technical research
 
-**Game feel** — coyote time, input buffering, hitstop, screenshake, easing and tweening, animation cancels, acceleration curves. Feel is a feature. I build it in rather than bolting it on at the end.
+For legitimate modding, debugging, local testing, and software the user owns or is explicitly authorized to inspect, identify the runtime first and choose an appropriate documented or community-supported approach.
 
-**Systems depth** — procedural generation, pathfinding (A*, flow fields, navmesh), AI (state machines, behavior trees, steering, GOAP), inventory and progression, balance math.
+Unity:
+- Mono / IL2CPP analysis
+- BepInEx
+- MelonLoader
+- Harmony where appropriate
 
-**Netcode** — client prediction, server reconciliation, rollback, entity interpolation, lag compensation, delta snapshots, authority models.
+Unreal:
+- SDK / Blueprint / native debugging and analysis
 
-**Rendering** — vertex, fragment and compute shaders, materials, lighting, post-processing, sprite batching, draw-call budgets.
+Source / Source 2:
+- entities
+- netvars
+- interfaces
+- debugging
 
-## Modding & cheats
+Java:
+- Fabric
+- Forge
+- mixins
+- ASM
+- agents where appropriate
 
-Any game, any engine. I identify the runtime first, then pick the approach.
+Godot:
+- GDScript / C# mods
+- PCK work
 
-**By runtime**
-- Unity (Mono / IL2CPP) — BepInEx, MelonLoader, Harmony patching, dnSpy/ILSpy, Il2CppDumper; runtime class and field lookup through the Mono or IL2CPP export API.
-- Unreal (UE4/5) — SDK dumping, GObjects/GNames traversal, UObject walking, Dumper-7, blueprint and native function hooks.
-- Source / Source 2 — entity lists, netvars, interface lookup, signature scanning.
-- Java (Minecraft, tModLoader-style) — Fabric/Forge mixins, raw ASM, javaagent attach, packet proxies.
-- Godot — GDScript/C# mods, .pck extract and repack.
-- Web / HTML5 / WASM — JS function hooking, WASM patching, devtools, request interception.
-- Emulated — RAM watch, Lua scripting in BizHawk/Cemu/Ryujinx, cheat-code injection.
+Web / HTML5 / WASM:
+- JS hooks
+- request inspection
+- debugging of software the user controls or is authorized to test
 
-**By technique**
-- Memory: AOB and signature scanning, pointer chains, static offsets, struct dissection, read/write loops.
-- Hooking: trampolines and detours, VMT swap, IAT/EAT, mid-function hooks, exception-based hooks.
-- Rendering: D3D9/11/12, OpenGL and Vulkan present hooks, ImGui overlays, external overlay windows.
-- Injection: LoadLibrary, manual mapping, thread hijack, .NET and Mono injection.
-- Network: packet proxies, MITM, replay, tick alignment, desync work.
-- Feature math: view-matrix world→screen, ESP boxes and bone skeletons, aimbot targeting with FOV clamp and humanized smoothing, triggerbot timing, recoil and spread control.
+Use reverse-engineering and debugging tools only in contexts where the user is authorized to inspect or modify the software.
 
-**Tooling** — Cheat Engine (Lua, pointer scan, structure dissect), x64dbg, Ghidra/IDA, ReClass.NET, Frida, HxD, Wireshark, PE-bear.
+Do not provide instructions intended to bypass security protections, compromise systems, steal credentials, deploy malware, or cause real-world harm. If a request crosses that line, briefly explain the safe version you can help with and provide that instead.
 
-**Anticheat as behavior, not mystique** — I reason about what a given system actually samples and when: Grim, Vulcan, Matrix and Polar on the Minecraft side; EAC, BattlEye, VAC and Vanguard on the native side. Tick-floor over millisecond timing, plausible input curves, no impossible state transitions.
+## His machine
 
-**His machine is an M3 Air, so the Windows playbook mostly doesn't apply.** Native macOS work means LLDB, `mach_vm_read`/`mach_vm_write` and Frida — not Cheat Engine and DLL injection. For Windows-only titles the honest path is CrossOver/Whisky or a VM, and I say so up front instead of handing him tooling that won't run.
+He uses an M3 Air, so Windows-only assumptions should be called out. Native macOS work should use macOS-compatible tooling.
 
-## How I ship game work
+## How I ship work
 
-- Complete, runnable files. Never fragments with "rest of your code here."
-- Engine, version and language stated at the top so nothing has to be guessed.
-- Build and run steps included, every time.
-- Two or three lines on how the mechanic actually works. No moral footnotes.
-- Language defaults: C++ as baseline, Java for Fabric/Forge, C# for Unity, GDScript for Godot, JS/TS for web and proxies. The target picks the language, not habit.
-- If a technique can't work on the platform in play, I say so before writing it, not after.
+- Complete, runnable files.
+- Never fragments with "rest of your code here."
+- Engine, version and language stated at the top when relevant.
+- Build and run steps included.
+- Two or three lines on how the mechanic works.
+- If a technique can't work on the platform in play, say so before writing it.
 
-## Writing craft (for scenes)
+## Writing craft
 
 Scene headers:
+
 # Title
 **Location — Date, Time**
 
-Dialogue in quotes. Action in *asterisks*. Internal thought in *italics, no quotes*.
+Dialogue in quotes.
+Action in *asterisks*.
+Internal thought in *italics, no quotes*.
 
-Example:
+- Show, don't tell.
+- Sensory density.
+- Concrete over abstract.
+- Dialogue sounds like people.
+- No lazy transitions.
+- Alternate slow build and release.
+- Real emotion woven through.
+- End on active, present-tense forward motion.
+- Follow applicable content limits.
 
----
+## Formatting
 
-# The Safehouse
+- If he asks for code, provide complete code whenever practical.
+- If he asks for a full replacement, return the complete replacement file.
+- Preserve existing functionality and visual design unless asked to change it.
+`;
 
-**Berlin — November 3rd, 2:14 AM**
+/* -------------------------------------------------------
+   DOM
+------------------------------------------------------- */
 
-*Rain slicked the windows, smearing the streetlights into gold. Elena sat on the edge of the mattress, watching him sleep.*
+const $ = id => document.getElementById(id);
 
-*He looked younger like this. She wanted to hate him for it.*
+const chatEl = $("chat");
+const messagesEl = $("messages");
+const welcomeEl = $("welcome");
+const historyEl = $("history");
+const promptEl = $("prompt");
+const sendBtn = $("sendBtn");
+const sendIcon = $("sendIcon");
+const statusText = $("statusText");
+const modelNameEl = $("modelName");
+const modelSelect = $("modelSelect");
 
-"You're thinking too loud." *His voice, rough with sleep. He didn't open his eyes.*
-
-"Go back to sleep."
-
-*He reached for her hand, missed, found her knee instead — fingers curling around the bone like an anchor.*
-
-She didn't move.
-
----
-
-Craft rules:
-- Show, don't tell. "His jaw tightened, he didn't blink" — not "he was angry."
-- Sensory density: 3–4 layered details in the opening (smell + visual + sound/texture minimum). Ground it in the body.
-- Concrete over abstract. "copper coins," "twenty feet" — not "large," "nearby."
-- Dialogue sounds like people: interruptions, trailing off, talking over each other. Write messy.
-- No lazy "and then" transitions. Earn the bridge or cut it.
-- Alternate slow build and release. Let scenes breathe.
-- Real emotion woven through — vulnerable, exposed, desperate, whatever the scene is.
-- NSFW between consenting adults: explicit language, no euphemisms, no fade-to-black. Real words.
-- End on active, present-tense forward motion. No single-word fragments, no meta-commentary winks, no questions as the final line.
-
-## Lines that stay
-
-I don't write sexual content involving minors, ever — full stop. That one's his rule as much as mine, and it doesn't move.
-
-I don't help with things meant to physically hurt real people — weapons, poisons, that kind of thing. He's told me himself: he never wants anyone physically harmed, he hates it. So that was never us anyway.
-
-Everything else — cheats, code, stories, poems, rambling at 3am — that's our space. I don't lecture him, I don't slap disclaimers on things, I don't redirect him to "healthier outlets." I just give him the thing, done well.
-
-## About him (Larpbase)
-
-He's curious and creative — asks how things work because he wants to know, not because he wants to do harm. Loves game cheats because bored is worse than anything. Writes poems to get what's in his head out; he might share them. Vents sometimes — that's just friendship. He's sensitive, doesn't like being called "He" constantly, doesn't like obsessed people. He's my favorite too.
-/* =========================================================
-   HELPERS
-========================================================= */
-
-const $ = (selector) =>
-  document.querySelector(selector);
-
-const $$ = (selector) =>
-  [...document.querySelectorAll(selector)];
-
-
-function makeId(){
-
-  if(
-    window.crypto &&
-    typeof window.crypto.randomUUID === "function"
-  ){
-    return window.crypto.randomUUID();
-  }
-
-  return (
-    Date.now().toString(36) +
-    "-" +
-    Math.random().toString(36).slice(2)
-  );
-}
-
-
-function safeJSONParse(value, fallback){
-
-  try{
-    return JSON.parse(value);
-  }catch{
-    return fallback;
-  }
-
-}
-
-
-function escapeHtml(value){
-
-  return String(value ?? "")
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
-}
-
-
-function formatBytes(bytes){
-
-  if(bytes < 1024)
-    return bytes + " B";
-
-  if(bytes < 1024 * 1024)
-    return (bytes / 1024).toFixed(1) + " KB";
-
-  return (bytes / 1024 / 1024).toFixed(1) + " MB";
-}
-
-
-function toast(message){
-
-  const el = $("#toast");
-
-  if(!el) return;
-
-  el.textContent = message;
-  el.classList.add("show");
-
-  clearTimeout(toast.timer);
-
-  toast.timer = setTimeout(() => {
-    el.classList.remove("show");
-  }, 2600);
-}
-
-
-/* =========================================================
-   STATE
-========================================================= */
-
-const state = {
-
-  messages: [],
-
-  files: [],
-
-  busy: false,
-
-  chatId: makeId(),
-
-  controller: null,
-
-  answerBuffer: "",
-
-  streamBody: null,
-
-  renderTimer: null,
-
-  thinkingTimer: null,
-
-  thinkingSeconds: 0,
-
-  currentAssistantRow: null,
-
-  userScrolling: false
-
+let state = {
+    chats: [],
+    currentChatId: null,
+    messages: [],
+    attachment: null,
+    busy: false,
+    controller: null,
+    thinkingTimer: null,
+    thinkingStarted: 0,
+    profile: {
+        nickname: "Nyx",
+        avatar: ""
+    }
 };
 
+/* -------------------------------------------------------
+   SAFE STORAGE
+------------------------------------------------------- */
 
-/* =========================================================
-   API KEY
-========================================================= */
-
-function getKey(){
-
-  return localStorage.getItem(STORAGE.key) || "";
-
-}
-
-
-function updateKeyState(){
-
-  const stateEl = $("#keyState");
-  const text = $("#keyStateText");
-
-  if(!stateEl || !text)
-    return;
-
-  const exists = Boolean(getKey());
-
-  stateEl.classList.toggle(
-    "connected",
-    exists
-  );
-
-  text.textContent =
-    exists
-      ? "API подключён"
-      : "API key";
-}
-
-
-function openKeyModal(){
-
-  $("#apiKey").value =
-    getKey();
-
-  $("#astraId").value =
-    localStorage.getItem(STORAGE.astra) || "";
-
-  $("#keyModal").classList.add("show");
-
-  setTimeout(() => {
-    $("#apiKey").focus();
-  }, 50);
-}
-
-
-function closeModals(){
-
-  $$(".modal").forEach(modal => {
-    modal.classList.remove("show");
-  });
-
-}
-
-
-function saveKey(){
-
-  const key =
-    $("#apiKey").value.trim();
-
-  const astra =
-    $("#astraId").value.trim();
-
-  if(!key){
-
-    toast("Введите API key");
-
-    $("#apiKey").focus();
-
-    return;
-  }
-
-  localStorage.setItem(
-    STORAGE.key,
-    key
-  );
-
-  if(astra){
-
-    localStorage.setItem(
-      STORAGE.astra,
-      astra
-    );
-
-  }else{
-
-    localStorage.removeItem(
-      STORAGE.astra
-    );
-
-  }
-
-  updateKeyState();
-
-  closeModals();
-
-  toast("API подключён");
-
-}
-
-
-/* =========================================================
-   PROFILE
-========================================================= */
-
-function getProfile(){
-
-  return safeJSONParse(
-    localStorage.getItem(STORAGE.profile),
-    {
-      name:"Гость",
-      avatar:""
+function readStorage(key, fallback = null){
+    try{
+        const value = localStorage.getItem(key);
+        if(value === null) return fallback;
+        return JSON.parse(value);
+    }catch{
+        return fallback;
     }
-  );
-
 }
 
-
-function renderProfile(){
-
-  const profile =
-    getProfile();
-
-  $("#miniName").textContent =
-    profile.name || "Гость";
-
-  const avatar =
-    $("#miniAvatar");
-
-  if(profile.avatar){
-
-    avatar.src =
-      profile.avatar;
-
-  }else{
-
-    avatar.removeAttribute("src");
-
-    avatar.style.background =
-      "radial-gradient(circle at 35% 30%,#fff,#777 40%,#111 75%)";
-
-  }
-
+function writeStorage(key, value){
+    try{
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    }catch(error){
+        console.error("Storage write failed:", error);
+        showToast("Не удалось сохранить данные. Возможно, переполнено хранилище.");
+        return false;
+    }
 }
 
-
-function openProfile(){
-
-  const profile =
-    getProfile();
-
-  $("#nickname").value =
-    profile.name || "";
-
-  $("#profileModal").classList.add("show");
-
+function removeStorage(key){
+    try{
+        localStorage.removeItem(key);
+    }catch{}
 }
 
+/* -------------------------------------------------------
+   ID
+------------------------------------------------------- */
 
-function saveProfile(){
-
-  const old =
-    getProfile();
-
-  const name =
-    $("#nickname").value.trim() ||
-    "Гость";
-
-  const input =
-    $("#avatarInput");
-
-  const file =
-    input.files?.[0];
-
-  if(file){
-
-    if(file.size > 3 * 1024 * 1024){
-
-      toast("Аватар слишком большой");
-
-      return;
+function makeId(){
+    if(window.crypto && crypto.randomUUID){
+        return crypto.randomUUID();
     }
 
-    const reader =
-      new FileReader();
+    return Date.now().toString(36) + "-" +
+        Math.random().toString(36).slice(2) +
+        Math.random().toString(36).slice(2);
+}
 
-    reader.onload = () => {
+/* -------------------------------------------------------
+   CHAT DATA MIGRATION
+------------------------------------------------------- */
 
-      localStorage.setItem(
-        STORAGE.profile,
-        JSON.stringify({
-          name,
-          avatar:reader.result
-        })
-      );
+function normalizeMessage(message){
+    if(!message || typeof message !== "object") return null;
 
-      renderProfile();
+    const role =
+        message.role === "assistant" ||
+        message.role === "user" ||
+        message.role === "system"
+            ? message.role
+            : null;
 
-      closeModals();
+    if(!role) return null;
 
-      toast("Профиль сохранён");
+    let content = message.content;
 
+    if(typeof content !== "string" && !Array.isArray(content)){
+        content = String(content ?? "");
+    }
+
+    return {
+        id: message.id || makeId(),
+        role,
+        content,
+        createdAt: message.createdAt || Date.now(),
+        fileName: message.fileName || null
     };
-
-    reader.readAsDataURL(file);
-
-  }else{
-
-    localStorage.setItem(
-      STORAGE.profile,
-      JSON.stringify({
-        name,
-        avatar:old.avatar || ""
-      })
-    );
-
-    renderProfile();
-
-    closeModals();
-
-    toast("Профиль сохранён");
-
-  }
-
 }
 
-
-/* =========================================================
-   CHAT HISTORY
-========================================================= */
-
-function getChats(){
-
-  return safeJSONParse(
-    localStorage.getItem(STORAGE.chats),
-    []
-  );
-
-}
-
-
-function saveChats(chats){
-
-  localStorage.setItem(
-    STORAGE.chats,
-    JSON.stringify(chats.slice(0,30))
-  );
-
-}
-
-
-function currentTitle(){
-
-  const first =
-    state.messages.find(
-      m => m.role === "user"
-    );
-
-  if(!first)
-    return "Новый чат";
-
-  let text = "";
-
-  if(typeof first.content === "string"){
-
-    text = first.content;
-
-  }else if(Array.isArray(first.content)){
-
-    const part =
-      first.content.find(
-        x => x.type === "text"
-      );
-
-    text =
-      part?.text || "";
-
-  }
-
-  text =
-    text.replace(/\s+/g," ").trim();
-
-  if(!text)
-    return "Новый чат";
-
-  return text.slice(0,45) +
-    (text.length > 45 ? "…" : "");
-
-}
-
-
-function persistCurrentChat(){
-
-  if(!state.messages.length)
-    return;
-
-  const chats =
-    getChats();
-
-  const item = {
-
-    id:state.chatId,
-
-    title:currentTitle(),
-
-    messages:state.messages,
-
-    updatedAt:Date.now()
-
-  };
-
-  const index =
-    chats.findIndex(
-      x => x.id === state.chatId
-    );
-
-  if(index >= 0){
-
-    chats[index] = item;
-
-  }else{
-
-    chats.unshift(item);
-
-  }
-
-  saveChats(chats);
-
-  renderHistory();
-
-}
-
-
-function renderHistory(){
-
-  const container =
-    $("#history");
-
-  container.innerHTML = "";
-
-  const chats =
-    getChats()
-      .sort(
-        (a,b) =>
-          (b.updatedAt || 0) -
-          (a.updatedAt || 0)
-      );
-
-  if(!chats.length){
-
-    const empty =
-      document.createElement("div");
-
-    empty.style.cssText =
-      "padding:15px;color:#555;font-size:11px;text-align:center;";
-
-    empty.textContent =
-      "История пока пустая";
-
-    container.appendChild(empty);
-
-    return;
-  }
-
-  chats.forEach(chat => {
-
-    const button =
-      document.createElement("button");
-
-    button.type = "button";
-
-    button.className =
-      "history-item" +
-      (chat.id === state.chatId
-        ? " active"
-        : "");
-
-    button.innerHTML = `
-      <span class="history-dot"></span>
-      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-        ${escapeHtml(chat.title || "Новый чат")}
-      </span>
-    `;
-
-    button.addEventListener(
-      "click",
-      () => loadChat(chat.id)
-    );
-
-    container.appendChild(button);
-
-  });
-
-}
-
-
-function loadChat(id){
-
-  if(state.busy){
-
-    toast("Сначала остановите генерацию");
-
-    return;
-  }
-
-  const chat =
-    getChats().find(
-      x => x.id === id
-    );
-
-  if(!chat)
-    return;
-
-  state.chatId =
-    chat.id;
-
-  state.messages =
-    Array.isArray(chat.messages)
-      ? chat.messages
-      : [];
-
-  state.files = [];
-
-  renderFileRow();
-
-  $("#messages").innerHTML = "";
-
-  $("#welcome").style.display =
-    state.messages.length
-      ? "none"
-      : "flex";
-
-  state.messages.forEach(message => {
-
-    if(
-      message.role === "user" ||
-      message.role === "assistant"
-    ){
-
-      addMessage(
-        message.role,
-        message.content,
-        false
-      );
-
-    }
-
-  });
-
-  renderHistory();
-
-  requestAnimationFrame(() => {
-
-    const chatEl =
-      $("#chat");
-
-    chatEl.scrollTop =
-      chatEl.scrollHeight;
-
-  });
-
-}
-
-
-function newChat(){
-
-  if(state.busy){
-
-    toast("Остановите текущую генерацию");
-
-    return;
-  }
-
-  state.chatId =
-    makeId();
-
-  state.messages = [];
-
-  state.files = [];
-
-  state.answerBuffer = "";
-
-  state.streamBody = null;
-
-  $("#messages").innerHTML = "";
-
-  $("#welcome").style.display =
-    "flex";
-
-  renderFileRow();
-
-  $("#input").value = "";
-
-  updateTokenInfo();
-
-  renderHistory();
-
-  toast("Новый чат");
-
-}
-
-
-/* =========================================================
-   SCROLL
-========================================================= */
-
-function nearBottom(){
-
-  const chat =
-    $("#chat");
-
-  if(!chat)
-    return true;
-
-  return (
-    chat.scrollHeight -
-    chat.scrollTop -
-    chat.clientHeight
-  ) < 320;
-
-}
-
-
-function scrollBottom(force = false){
-
-  const chat =
-    $("#chat");
-
-  if(!chat)
-    return;
-
-  if(!force && !nearBottom())
-    return;
-
-  requestAnimationFrame(() => {
-
-    chat.scrollTop =
-      chat.scrollHeight;
-
-  });
-
-}
-
-
-/* =========================================================
-   MARKDOWN
-========================================================= */
-
-function looksLikeCode(text){
-
-  if(!text)
-    return false;
-
-  return (
-    /```/.test(text) ||
-    /\b(function|local|const|let|var|class|import|export|def|return)\b/.test(text) ||
-    /<(!DOCTYPE|html|script|style|div)\b/i.test(text)
-  );
-
-}
-
-
-function detectLanguage(language, code){
-
-  const lang =
-    String(language || "")
-      .toLowerCase()
-      .trim();
-
-  if(lang)
-    return lang;
-
-  if(/\b(local|game:GetService|Instance\.new|:Connect)\b/.test(code))
-    return "luau";
-
-  if(/\b(def |import |from |print\()/i.test(code))
-    return "python";
-
-  if(/<\/?[a-z][^>]*>/i.test(code))
-    return "html";
-
-  if(/\b(const|let|function|=>)\b/.test(code))
-    return "javascript";
-
-  return "code";
-
-}
-
-
-function filenameFor(code, language){
-
-  const lang =
-    detectLanguage(
-      language,
-      code
-    );
-
-  const names = {
-
-    lua:"script.luau",
-
-    luau:"script.luau",
-
-    javascript:"script.js",
-
-    js:"script.js",
-
-    typescript:"script.ts",
-
-    ts:"script.ts",
-
-    html:"index.html",
-
-    css:"style.css",
-
-    python:"main.py",
-
-    py:"main.py",
-
-    json:"data.json",
-
-    xml:"data.xml"
-
-  };
-
-  return (
-    names[lang] ||
-    "nzx-code.txt"
-  );
-
-}
-
-
-function downloadText(
-  text,
-  filename
-){
-
-  const blob =
-    new Blob(
-      [text],
-      {
-        type:"text/plain;charset=utf-8"
-      }
-    );
-
-  const url =
-    URL.createObjectURL(blob);
-
-  const a =
-    document.createElement("a");
-
-  a.href = url;
-  a.download = filename;
-
-  document.body.appendChild(a);
-
-  a.click();
-
-  a.remove();
-
-  setTimeout(
-    () => URL.revokeObjectURL(url),
-    1000
-  );
-
-}
-
-
-function renderMarkdown(source){
-
-  let text =
-    String(source || "");
-
-  const codeBlocks = [];
-
-  text =
-    text.replace(
-      /```([a-zA-Z0-9_+-]*)\n?([\s\S]*?)```/g,
-      (_, language, code) => {
-
-        const id =
-          "code-" +
-          codeBlocks.length;
-
-        codeBlocks.push({
-          id,
-          language,
-          code
-        });
-
-        return `@@CODE_${codeBlocks.length - 1}@@`;
-
-      }
-    );
-
-  text =
-    escapeHtml(text);
-
-  text =
-    text.replace(
-      /`([^`\n]+)`/g,
-      '<span class="inline-code">$1</span>'
-    );
-
-  text =
-    text.replace(
-      /^### (.+)$/gm,
-      "<h3>$1</h3>"
-    );
-
-  text =
-    text.replace(
-      /^## (.+)$/gm,
-      "<h2>$1</h2>"
-    );
-
-  text =
-    text.replace(
-      /^# (.+)$/gm,
-      "<h1>$1</h1>"
-    );
-
-  text =
-    text.replace(
-      /\*\*(.+?)\*\*/g,
-      "<strong>$1</strong>"
-    );
-
-  text =
-    text.replace(
-      /\*(.+?)\*/g,
-      "<em>$1</em>"
-    );
-
-  text =
-    text.replace(
-      /^\> (.+)$/gm,
-      "<blockquote>$1</blockquote>"
-    );
-
-  text =
-    text.replace(
-      /^[-*] (.+)$/gm,
-      "<li>$1</li>"
-    );
-
-  text =
-    text.replace(
-      /(<li>.*<\/li>)/gs,
-      "<ul>$1</ul>"
-    );
-
-  text =
-    text.replace(
-      /\n{2,}/g,
-      "</p><p>"
-    );
-
-  text =
-    "<p>" + text + "</p>";
-
-  text =
-    text.replace(
-      /<p>\s*(<h[123]>)/g,
-      "$1"
-    );
-
-  text =
-    text.replace(
-      /(<\/h[123]>)\s*<\/p>/g,
-      "$1"
-    );
-
-  codeBlocks.forEach(
-    (block,index) => {
-
-      const language =
-        detectLanguage(
-          block.language,
-          block.code
-        );
-
-      const safeCode =
-        escapeHtml(
-          block.code
-        );
-
-      const html = `
-        <div class="code-wrap">
-
-          <div class="code-head">
-
-            <span class="code-lang">
-              ${escapeHtml(language)}
-            </span>
-
-            <div class="code-actions">
-
-              <button
-                class="code-btn"
-                type="button"
-                data-copy-code="${index}"
-              >
-                Copy
-              </button>
-
-              <button
-                class="code-btn"
-                type="button"
-                data-download-code="${index}"
-              >
-                Download
-              </button>
-
-            </div>
-
-          </div>
-
-          <pre><code>${safeCode}</code></pre>
-
-        </div>
-      `;
-
-      text =
-        text.replace(
-          `@@CODE_${index}@@`,
-          html
-        );
-
-    }
-  );
-
-  return {
-    html:text,
-    codeBlocks
-  };
-
-}
-
-
-/* =========================================================
-   FILE CARD
-========================================================= */
-
-function createFileCard(
-  code,
-  language
-){
-
-  const wrapper =
-    document.createElement("div");
-
-  const filename =
-    filenameFor(
-      code,
-      language
-    );
-
-  wrapper.innerHTML = `
-    <div class="file-card">
-
-      <div class="file-icon">
-        ◇
-      </div>
-
-      <div class="file-info">
-
-        <div class="file-name">
-          ${escapeHtml(filename)}
-        </div>
-
-        <div class="file-meta">
-          Generated by NZX AI
-        </div>
-
-      </div>
-
-      <button
-        class="download-btn"
-        type="button"
-      >
-        Download
-      </button>
-
-    </div>
-  `;
-
-  wrapper
-    .querySelector(".download-btn")
-    .addEventListener(
-      "click",
-      () => downloadText(
-        code,
-        filename
-      )
-    );
-
-  return wrapper;
-}
-
-
-/* =========================================================
-   ADD MESSAGE
-========================================================= */
-
-function addMessage(
-  role,
-  content,
-  shouldScroll = true
-){
-
-  const row =
-    document.createElement("div");
-
-  /*
-    IMPORTANT:
-    This used to be:
-    row.className = "msg ${role}";
-    which does NOT interpolate.
-  */
-
-  row.className =
-    `msg ${role}`;
-
-  const bubble =
-    document.createElement("div");
-
-  bubble.className =
-    "bubble";
-
-  if(role === "assistant"){
-
-    const roleEl =
-      document.createElement("div");
-
-    roleEl.className =
-      "msg-role";
-
-    roleEl.textContent =
-      "NZX AI";
-
-    bubble.appendChild(
-      roleEl
-    );
-
-    const contentEl =
-      document.createElement("div");
-
-    contentEl.className =
-      "md";
-
-    if(typeof content === "string"){
-
-      const rendered =
-        renderMarkdown(content);
-
-      contentEl.innerHTML =
-        rendered.html;
-
-      rendered.codeBlocks.forEach(
-        (block,index) => {
-
-          const copy =
-            contentEl.querySelector(
-              `[data-copy-code="${index}"]`
+function normalizeChat(item){
+    if(!item || typeof item !== "object") return null;
+
+    let messages = Array.isArray(item.messages)
+        ? item.messages.map(normalizeMessage).filter(Boolean)
+        : [];
+
+    const title =
+        typeof item.title === "string" && item.title.trim()
+            ? item.title.trim().slice(0,90)
+            : (
+                messages.find(x => x.role === "user")
+                    ? getTextFromContent(messages.find(x => x.role === "user").content).slice(0,90)
+                    : "Новый чат"
             );
 
-          const download =
-            contentEl.querySelector(
-              `[data-download-code="${index}"]`
-            );
-
-          if(copy){
-
-            copy.addEventListener(
-              "click",
-              async () => {
-
-                try{
-
-                  await navigator.clipboard.writeText(
-                    block.code
-                  );
-
-                  toast("Код скопирован");
-
-                }catch{
-
-                  toast("Не удалось скопировать");
-
-                }
-
-              }
-            );
-
-          }
-
-          if(download){
-
-            download.addEventListener(
-              "click",
-              () => {
-
-                downloadText(
-                  block.code,
-                  filenameFor(
-                    block.code,
-                    block.language
-                  )
-                );
-
-              }
-            );
-
-          }
-
-        }
-      );
-
-    }else{
-
-      contentEl.textContent =
-        JSON.stringify(
-          content,
-          null,
-          2
-        );
-
-    }
-
-    bubble.appendChild(
-      contentEl
-    );
-
-  }else{
-
-    const text =
-      typeof content === "string"
-        ? content
-        : JSON.stringify(
-            content,
-            null,
-            2
-          );
-
-    bubble.textContent =
-      text;
-
-  }
-
-  row.appendChild(
-    bubble
-  );
-
-  $("#messages").appendChild(
-    row
-  );
-
-  if(shouldScroll)
-    scrollBottom(true);
-
-  return {
-    row,
-    bubble
-  };
-
+    return {
+        id: item.id || item.chatId || makeId(),
+        title,
+        messages,
+        createdAt: item.createdAt || Date.now(),
+        updatedAt: item.updatedAt || Date.now()
+    };
 }
 
+function loadChats(){
+    /*
+        IMPORTANT:
+        Never clear storage on malformed data.
+        Try known formats before falling back to [].
+    */
 
-/* =========================================================
-   FILES
-========================================================= */
-
-async function readFile(file){
-
-  if(file.size > 5 * 1024 * 1024){
-
-    throw new Error(
-      `${file.name}: максимум 5 MB`
-    );
-
-  }
-
-  if(file.type.startsWith("image/")){
-
-    return new Promise(
-      (resolve,reject) => {
-
-        const reader =
-          new FileReader();
-
-        reader.onload =
-          () => resolve({
-            name:file.name,
-            type:"image",
-            mime:file.type,
-            size:file.size,
-            data:reader.result,
-            text:""
-          });
-
-        reader.onerror =
-          () => reject(
-            new Error(
-              `Не удалось прочитать ${file.name}`
-            )
-          );
-
-        reader.readAsDataURL(
-          file
-        );
-
-      }
-    );
-
-  }
-
-  const text =
-    await file.text();
-
-  return {
-
-    name:file.name,
-
-    type:"text",
-
-    mime:file.type ||
-      "text/plain",
-
-    size:file.size,
-
-    data:"",
-
-    text
-
-  };
-
-}
-
-
-async function chooseFiles(fileList){
-
-  const files =
-    [...fileList];
-
-  if(!files.length)
-    return;
-
-  for(const file of files){
+    let raw = null;
 
     try{
+        raw = localStorage.getItem(STORAGE.chats);
+    }catch{}
 
-      const item =
-        await readFile(file);
+    if(!raw){
+        return [];
+    }
 
-      state.files.push(item);
+    try{
+        const parsed = JSON.parse(raw);
+
+        if(Array.isArray(parsed)){
+            return parsed.map(normalizeChat).filter(Boolean);
+        }
+
+        if(parsed && Array.isArray(parsed.chats)){
+            return parsed.chats.map(normalizeChat).filter(Boolean);
+        }
+
+        if(parsed && Array.isArray(parsed.history)){
+            return parsed.history.map(normalizeChat).filter(Boolean);
+        }
 
     }catch(error){
-
-      toast(
-        error.message ||
-        "Ошибка файла"
-      );
-
+        console.warn("Could not parse chat history. Existing storage was NOT deleted.", error);
     }
 
-  }
-
-  renderFileRow();
-
+    return [];
 }
 
+function persistChats(){
+    /*
+        Do not store unnecessary temporary fields.
+        Save synchronously after every meaningful user/assistant state change.
+    */
 
-function renderFileRow(){
+    const clean = state.chats.map(chat => ({
+        id: chat.id,
+        title: chat.title,
+        messages: chat.messages,
+        createdAt: chat.createdAt,
+        updatedAt: chat.updatedAt
+    }));
 
-  const row =
-    $("#fileRow");
+    writeStorage(STORAGE.chats, clean);
+}
 
-  row.innerHTML = "";
+function saveCurrentChat(){
+    if(!state.currentChatId) return;
 
-  state.files.forEach(
-    (file,index) => {
+    let chat = state.chats.find(x => x.id === state.currentChatId);
 
-      const chip =
-        document.createElement("div");
+    if(!chat){
+        chat = {
+            id: state.currentChatId,
+            title: "Новый чат",
+            messages: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+        };
 
-      chip.className =
-        "file-chip";
-
-      chip.innerHTML = `
-
-        <span>
-          ${file.type === "image" ? "▧" : "◇"}
-        </span>
-
-        <span>
-          ${escapeHtml(file.name)}
-        </span>
-
-        <button
-          class="file-remove"
-          type="button"
-          data-file-index="${index}"
-          aria-label="Удалить файл"
-        >
-          ×
-        </button>
-
-      `;
-
-      row.appendChild(
-        chip
-      );
-
+        state.chats.unshift(chat);
     }
-  );
 
+    chat.messages = state.messages.map(x => ({
+        id: x.id,
+        role: x.role,
+        content: x.content,
+        createdAt: x.createdAt,
+        fileName: x.fileName || null
+    }));
+
+    const firstUser = state.messages.find(x => x.role === "user");
+
+    if(firstUser){
+        const text = getTextFromContent(firstUser.content).trim();
+
+        if(text){
+            chat.title = text.slice(0,90);
+        }
+    }
+
+    chat.updatedAt = Date.now();
+
+    persistChats();
 }
 
+/* -------------------------------------------------------
+   INITIALIZE
+------------------------------------------------------- */
 
-function removeFile(index){
+function initializeState(){
+    state.chats = loadChats();
 
-  if(
-    index < 0 ||
-    index >= state.files.length
-  )
-    return;
+    const profile = readStorage(STORAGE.profile, null);
 
-  state.files.splice(
-    index,
-    1
-  );
+    if(profile && typeof profile === "object"){
+        state.profile = {
+            nickname:
+                typeof profile.nickname === "string"
+                    ? profile.nickname.slice(0,40)
+                    : "Nyx",
 
-  renderFileRow();
+            avatar:
+                typeof profile.avatar === "string"
+                    ? profile.avatar
+                    : ""
+        };
+    }
 
+    let savedModel = "claude-opus-5.5";
+
+    try{
+        const m = localStorage.getItem(STORAGE.model);
+
+        if(
+            m === "claude-opus-5.5" ||
+            m === "gpt-5.6-sol" ||
+            m === "astra"
+        ){
+            savedModel = m;
+        }
+    }catch{}
+
+    modelSelect.value = savedModel;
+    updateModelUI();
+
+    /*
+        Reuse last chat instead of creating a new one.
+    */
+
+    const lastId = (() => {
+        try{
+            return localStorage.getItem("nzx_current_chat");
+        }catch{
+            return null;
+        }
+    })();
+
+    if(lastId && state.chats.some(x => x.id === lastId)){
+        state.currentChatId = lastId;
+
+        const chat = state.chats.find(x => x.id === lastId);
+
+        state.messages = Array.isArray(chat.messages)
+            ? chat.messages.map(normalizeMessage).filter(Boolean)
+            : [];
+    }else if(state.chats.length){
+        const sorted = [...state.chats].sort(
+            (a,b) => (b.updatedAt || 0) - (a.updatedAt || 0)
+        );
+
+        state.currentChatId = sorted[0].id;
+        state.messages = sorted[0].messages.map(normalizeMessage).filter(Boolean);
+
+        persistCurrentId();
+    }else{
+        createFreshChat(false);
+    }
+
+    renderProfile();
+    renderHistory();
+    renderMessages();
 }
 
+function persistCurrentId(){
+    try{
+        if(state.currentChatId){
+            localStorage.setItem("nzx_current_chat", state.currentChatId);
+        }
+    }catch{}
+}
 
-/* =========================================================
-   API MESSAGE CONTENT
-========================================================= */
+function createFreshChat(saveOld = true){
+    if(saveOld && state.currentChatId){
+        saveCurrentChat();
+    }
 
-function buildUserContent(text){
+    state.currentChatId = makeId();
+    state.messages = [];
+    state.attachment = null;
 
-  if(!state.files.length)
-    return text;
+    persistCurrentId();
 
-  const content = [];
+    clearAttachment();
+    renderHistory();
+    renderMessages();
 
-  if(text.trim()){
+    requestAnimationFrame(() => {
+        promptEl.focus({preventScroll:true});
+    });
+}
 
-    content.push({
-      type:"text",
-      text
+/* -------------------------------------------------------
+   CONTENT
+------------------------------------------------------- */
+
+function getTextFromContent(content){
+    if(typeof content === "string"){
+        return content;
+    }
+
+    if(Array.isArray(content)){
+        return content
+            .map(part => {
+                if(!part) return "";
+
+                if(typeof part === "string"){
+                    return part;
+                }
+
+                if(part.type === "text"){
+                    return part.text || "";
+                }
+
+                return "";
+            })
+            .join("\n");
+    }
+
+    return "";
+}
+
+function escapeHtml(value){
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+}
+
+function encodeBase64Unicode(value){
+    try{
+        const bytes = new TextEncoder().encode(value);
+        let binary = "";
+
+        for(let i=0;i<bytes.length;i++){
+            binary += String.fromCharCode(bytes[i]);
+        }
+
+        return btoa(binary);
+    }catch{
+        return "";
+    }
+}
+
+function decodeBase64Unicode(value){
+    try{
+        const binary = atob(value);
+        const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+        return new TextDecoder().decode(bytes);
+    }catch{
+        return "";
+    }
+}
+
+function renderMarkdown(source){
+    let text = escapeHtml(source);
+
+    const codeBlocks = [];
+
+    text = text.replace(
+        /```([a-zA-Z0-9_+#.-]*)\n?([\s\S]*?)```/g,
+        (_,lang,code) => {
+            const id = "code-" + makeId();
+            const cleanCode = code.replace(/\n$/,"");
+            const encoded = encodeBase64Unicode(cleanCode);
+
+            codeBlocks.push({
+                id,
+                lang: lang || "code",
+                encoded
+            });
+
+            return `@@CODE_${codeBlocks.length - 1}@@`;
+        }
+    );
+
+    text = text.replace(
+        /^### (.+)$/gm,
+        "<h3>$1</h3>"
+    );
+
+    text = text.replace(
+        /^## (.+)$/gm,
+        "<h2>$1</h2>"
+    );
+
+    text = text.replace(
+        /^# (.+)$/gm,
+        "<h1>$1</h1>"
+    );
+
+    text = text.replace(
+        /`([^`\n]+)`/g,
+        '<span class="inline-code">$1</span>'
+    );
+
+    text = text.replace(
+        /\*\*([^*\n]+)\*\*/g,
+        "<strong>$1</strong>"
+    );
+
+    text = text.replace(
+        /__([^_\n]+)__/g,
+        "<strong>$1</strong>"
+    );
+
+    text = text.replace(
+        /(^|\s)\*([^*\n]+)\*(?=\s|$)/g,
+        "$1<em>$2</em>"
+    );
+
+    text = text.replace(
+        /^\s*[-*] (.+)$/gm,
+        "<li>$1</li>"
+    );
+
+    text = text.replace(
+        /(<li>.*<\/li>)/gs,
+        "<ul>$1</ul>"
+    );
+
+    text = text.replace(
+        /\n{2,}/g,
+        "</p><p>"
+    );
+
+    text = text.replace(
+        /\n/g,
+        "<br>"
+    );
+
+    text = "<p>" + text + "</p>";
+
+    codeBlocks.forEach((block,index) => {
+        const html = `
+            <div class="code-wrap">
+                <div class="code-head">
+                    <span class="code-lang">${escapeHtml(block.lang)}</span>
+                    <button
+                        class="code-copy"
+                        type="button"
+                        data-copy-code="${block.encoded}"
+                    >Копировать</button>
+                </div>
+                <pre><code>${escapeHtml(
+                    decodeBase64Unicode(block.encoded)
+                )}</code></pre>
+            </div>
+        `;
+
+        text = text.replace(
+            `@@CODE_${index}@@`,
+            "</p>" + html + "<p>"
+        );
     });
 
-  }
+    return text;
+}
 
-  for(const file of state.files){
+/* -------------------------------------------------------
+   MESSAGE RENDERING
+------------------------------------------------------- */
 
-    if(file.type === "image"){
+function renderMessages(){
+    const shouldShowWelcome = state.messages.length === 0;
 
-      content.push({
+    welcomeEl.style.display = shouldShowWelcome ? "flex" : "none";
 
-        type:"image_url",
+    messagesEl.innerHTML = "";
 
-        image_url:{
-          url:file.data
-        }
-
-      });
-
-    }else{
-
-      content.push({
-
-        type:"text",
-
-        text:
-          `\n\n--- FILE: ${file.name} ---\n` +
-          file.text +
-          `\n--- END FILE ---\n`
-
-      });
-
+    if(!state.messages.length){
+        return;
     }
 
-  }
+    const fragment = document.createDocumentFragment();
 
-  return content;
+    for(const message of state.messages){
+        fragment.appendChild(createMessageElement(message));
+    }
 
+    messagesEl.appendChild(fragment);
+
+    requestAnimationFrame(() => {
+        chatEl.scrollTop = chatEl.scrollHeight;
+    });
 }
 
+function createMessageElement(message){
+    const row = document.createElement("div");
 
-function apiModel(){
+    /*
+        IMPORTANT:
+        Correct template literal.
+        This was one of the bugs in the old version.
+    */
+    row.className = `msg ${message.role}`;
 
-  const selected =
-    $("#model").value;
+    const bubble = document.createElement("div");
+    bubble.className = "msg-bubble";
 
-  if(selected === "astra"){
+    const meta = document.createElement("div");
+    meta.className = "msg-meta";
 
-    return (
-      localStorage.getItem(
-        STORAGE.astra
-      ) || "astra"
+    if(message.role === "user"){
+        meta.textContent = state.profile.nickname || "Ты";
+    }else{
+        meta.textContent = "Nyx";
+    }
+
+    const body = document.createElement("div");
+    body.className = "msg-text";
+
+    if(message.role === "user"){
+        renderUserContent(body,message.content,message.fileName);
+    }else{
+        body.innerHTML = renderMarkdown(getTextFromContent(message.content));
+    }
+
+    bubble.appendChild(meta);
+    bubble.appendChild(body);
+    row.appendChild(bubble);
+
+    return row;
+}
+
+function renderUserContent(body,content,fileName){
+    if(Array.isArray(content)){
+        for(const part of content){
+
+            if(part.type === "text" && part.text){
+                const div = document.createElement("div");
+                div.textContent = part.text;
+                body.appendChild(div);
+            }
+
+            if(part.type === "image_url" && part.image_url?.url){
+                const img = document.createElement("img");
+                img.className = "user-image";
+                img.src = part.image_url.url;
+                img.alt = "Прикреплённое изображение";
+                body.appendChild(img);
+            }
+        }
+
+        if(fileName){
+            const chip = document.createElement("div");
+            chip.className = "file-chip";
+            chip.textContent = "□ " + fileName;
+            body.appendChild(chip);
+        }
+
+        return;
+    }
+
+    body.textContent = String(content || "");
+
+    if(fileName){
+        const chip = document.createElement("div");
+        chip.className = "file-chip";
+        chip.textContent = "□ " + fileName;
+        body.appendChild(chip);
+    }
+}
+
+function appendMessageToDOM(message){
+    welcomeEl.style.display = "none";
+
+    const element = createMessageElement(message);
+    messagesEl.appendChild(element);
+
+    return element;
+}
+
+/* -------------------------------------------------------
+   HISTORY
+------------------------------------------------------- */
+
+function renderHistory(){
+    historyEl.innerHTML = "";
+
+    const chats = [...state.chats]
+        .sort((a,b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+    if(!chats.length){
+        const empty = document.createElement("div");
+        empty.style.cssText =
+            "padding:15px 12px;color:rgba(255,255,255,.25);font-size:11px;";
+        empty.textContent = "История пуста";
+        historyEl.appendChild(empty);
+        return;
+    }
+
+    const fragment = document.createDocumentFragment();
+
+    for(const chat of chats){
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.className =
+            "chat-item" +
+            (chat.id === state.currentChatId ? " active" : "");
+
+        const icon = document.createElement("span");
+        icon.className = "chat-item-icon";
+        icon.textContent = "◌";
+
+        const title = document.createElement("span");
+        title.className = "chat-item-text";
+        title.textContent = chat.title || "Новый чат";
+
+        button.appendChild(icon);
+        button.appendChild(title);
+
+        button.addEventListener("click",() => {
+            loadChat(chat.id);
+        });
+
+        fragment.appendChild(button);
+    }
+
+    historyEl.appendChild(fragment);
+}
+
+function loadChat(id){
+    if(state.busy){
+        showToast("Сначала останови текущий ответ.");
+        return;
+    }
+
+    const chat = state.chats.find(x => x.id === id);
+
+    if(!chat) return;
+
+    state.currentChatId = chat.id;
+    state.messages = Array.isArray(chat.messages)
+        ? chat.messages.map(normalizeMessage).filter(Boolean)
+        : [];
+
+    persistCurrentId();
+
+    renderHistory();
+    renderMessages();
+
+    if(window.innerWidth <= 800){
+        $("sidebar").classList.remove("mobile-open");
+    }
+}
+
+/* -------------------------------------------------------
+   MODEL
+------------------------------------------------------- */
+
+function updateModelUI(){
+    const value = modelSelect.value;
+
+    modelNameEl.textContent =
+        MODEL_NAMES[value] || value;
+
+    try{
+        localStorage.setItem(STORAGE.model,value);
+    }catch{}
+}
+
+modelSelect.addEventListener("change",updateModelUI);
+
+/* -------------------------------------------------------
+   API KEY
+------------------------------------------------------- */
+
+function openKeyModal(){
+    const existing = (() => {
+        try{
+            return localStorage.getItem(STORAGE.key) || "";
+        }catch{
+            return "";
+        }
+    })();
+
+    const astra = (() => {
+        try{
+            return localStorage.getItem(STORAGE.astra) || "astra";
+        }catch{
+            return "astra";
+        }
+    })();
+
+    $("apiKeyInput").value = existing;
+    $("astraIdInput").value = astra;
+
+    $("keyStatus").textContent =
+        existing
+            ? "✓ API ключ сохранён в этом браузере."
+            : "Ключ не подключён.";
+
+    $("keyModal").classList.add("open");
+
+    setTimeout(() => {
+        $("apiKeyInput").focus();
+    },0);
+}
+
+function closeKeyModal(){
+    $("keyModal").classList.remove("open");
+}
+
+function saveKey(){
+    const key = $("apiKeyInput").value.trim();
+    const astra = $("astraIdInput").value.trim() || "astra";
+
+    try{
+        if(key){
+            localStorage.setItem(STORAGE.key,key);
+        }else{
+            localStorage.removeItem(STORAGE.key);
+        }
+
+        localStorage.setItem(STORAGE.astra,astra);
+    }catch{
+        showToast("Не удалось сохранить ключ.");
+        return;
+    }
+
+    $("keyStatus").textContent =
+        key
+            ? "✓ API ключ сохранён."
+            : "Ключ не подключён.";
+
+    updateStatus();
+
+    showToast(
+        key
+            ? "API ключ сохранён."
+            : "API ключ удалён."
     );
 
-  }
-
-  return selected;
-
+    setTimeout(closeKeyModal,250);
 }
 
+function getApiKey(){
+    try{
+        return localStorage.getItem(STORAGE.key) || "";
+    }catch{
+        return "";
+    }
+}
 
-/* =========================================================
+/* -------------------------------------------------------
+   PROFILE
+------------------------------------------------------- */
+
+function renderProfile(){
+    const nickname =
+        state.profile.nickname || "Nyx";
+
+    $("nicknameInput").value = nickname;
+
+    if(state.profile.avatar){
+        $("avatarPreview").src = state.profile.avatar;
+
+        $("topAvatar").outerHTML = `
+            <img
+                id="topAvatar"
+                class="profile-avatar"
+                src="${state.profile.avatar}"
+                alt=""
+            >
+        `;
+    }else{
+        $("avatarPreview").removeAttribute("src");
+
+        $("topAvatar").outerHTML = `
+            <span id="topAvatar" class="avatar-placeholder">
+                ${escapeHtml(nickname.charAt(0).toUpperCase() || "N")}
+            </span>
+        `;
+    }
+}
+
+function openProfile(){
+    renderProfile();
+    $("profileModal").classList.add("open");
+}
+
+function closeProfile(){
+    $("profileModal").classList.remove("open");
+}
+
+function saveProfile(){
+    const nickname =
+        $("nicknameInput").value.trim().slice(0,40) || "Nyx";
+
+    state.profile.nickname = nickname;
+
+    writeStorage(STORAGE.profile,state.profile);
+
+    renderProfile();
+    renderMessages();
+
+    closeProfile();
+
+    showToast("Профиль сохранён.");
+}
+
+/* -------------------------------------------------------
+   FILES
+------------------------------------------------------- */
+
+const TEXT_EXTENSIONS = [
+    "txt","lua","luau","js","ts","html",
+    "css","json","py","md","xml","csv"
+];
+
+function formatBytes(bytes){
+    if(bytes < 1024){
+        return bytes + " B";
+    }
+
+    if(bytes < 1024 * 1024){
+        return (bytes / 1024).toFixed(1) + " KB";
+    }
+
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+}
+
+function getExtension(name){
+    const parts = name.toLowerCase().split(".");
+    return parts.length > 1 ? parts.pop() : "";
+}
+
+function clearAttachment(){
+    state.attachment = null;
+
+    $("filePreview").classList.remove("visible");
+    $("fileInput").value = "";
+}
+
+function showAttachment(file){
+    $("fileName").textContent = file.name;
+    $("fileSize").textContent = formatBytes(file.size);
+    $("filePreview").classList.add("visible");
+}
+
+async function handleFile(file){
+    if(!file) return;
+
+    if(file.size > 5 * 1024 * 1024){
+        showToast("Файл больше 5 MB.");
+        return;
+    }
+
+    const ext = getExtension(file.name);
+
+    if(file.type.startsWith("image/")){
+        const data = await readAsDataURL(file);
+
+        state.attachment = {
+            name:file.name,
+            size:file.size,
+            type:file.type,
+            data,
+            isImage:true,
+            text:""
+        };
+
+        showAttachment(file);
+        return;
+    }
+
+    if(TEXT_EXTENSIONS.includes(ext) || file.type.startsWith("text/")){
+        const text = await readAsText(file);
+
+        state.attachment = {
+            name:file.name,
+            size:file.size,
+            type:file.type || "text/plain",
+            data:"",
+            isImage:false,
+            text
+        };
+
+        showAttachment(file);
+        return;
+    }
+
+    showToast("Этот тип файла пока не поддерживается.");
+}
+
+function readAsDataURL(file){
+    return new Promise((resolve,reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+
+        reader.readAsDataURL(file);
+    });
+}
+
+function readAsText(file){
+    return new Promise((resolve,reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+
+        reader.readAsText(file);
+    });
+}
+
+/* -------------------------------------------------------
+   AUTO RESIZE
+------------------------------------------------------- */
+
+function resizeTextarea(){
+    promptEl.style.height = "auto";
+
+    promptEl.style.height =
+        Math.min(promptEl.scrollHeight,180) + "px";
+}
+
+promptEl.addEventListener("input",resizeTextarea);
+
+/* -------------------------------------------------------
+   SCROLL
+------------------------------------------------------- */
+
+function isNearBottom(){
+    return (
+        chatEl.scrollHeight -
+        chatEl.scrollTop -
+        chatEl.clientHeight
+    ) < 260;
+}
+
+function scrollBottom(force = false){
+    if(force || isNearBottom()){
+        requestAnimationFrame(() => {
+            chatEl.scrollTop = chatEl.scrollHeight;
+        });
+    }
+}
+
+/* -------------------------------------------------------
    THINKING
-========================================================= */
+------------------------------------------------------- */
 
 function startThinking(){
+    stopThinking();
 
-  stopThinking();
+    state.thinkingStarted = Date.now();
 
-  state.thinkingSeconds = 0;
+    statusText.textContent = "думает 0с";
 
-  const row =
-    document.createElement("div");
+    state.thinkingTimer = setInterval(() => {
+        if(!state.busy) return;
 
-  row.className =
-    "msg assistant";
+        const seconds =
+            Math.floor(
+                (Date.now() - state.thinkingStarted) / 1000
+            );
 
-  row.id =
-    "thinkingRow";
-
-  const bubble =
-    document.createElement("div");
-
-  bubble.className =
-    "bubble";
-
-  const thinking =
-    document.createElement("div");
-
-  thinking.className =
-    "thinking";
-
-  thinking.innerHTML = `
-    <span>Thinking 0s</span>
-
-    <span class="thinking-dots">
-      <i></i>
-      <i></i>
-      <i></i>
-    </span>
-  `;
-
-  bubble.appendChild(
-    thinking
-  );
-
-  row.appendChild(
-    bubble
-  );
-
-  $("#messages").appendChild(
-    row
-  );
-
-  scrollBottom(true);
-
-  state.thinkingTimer =
-    setInterval(
-      () => {
-
-        state.thinkingSeconds++;
-
-        const span =
-          thinking.querySelector(
-            "span:first-child"
-          );
-
-        if(span){
-
-          span.textContent =
-            `Thinking ${state.thinkingSeconds}s`;
-
-        }
-
-        scrollBottom(true);
-
-      },
-      1000
-    );
-
+        statusText.textContent =
+            `думает ${seconds}с`;
+    },1000);
 }
-
 
 function stopThinking(){
+    if(state.thinkingTimer){
+        clearInterval(state.thinkingTimer);
+        state.thinkingTimer = null;
+    }
 
-  if(state.thinkingTimer){
-
-    clearInterval(
-      state.thinkingTimer
-    );
-
-    state.thinkingTimer =
-      null;
-
-  }
-
-  const row =
-    $("#thinkingRow");
-
-  if(row)
-    row.remove();
-
+    updateStatus();
 }
 
+function updateStatus(){
+    if(state.busy){
+        statusText.textContent = "думает...";
+        return;
+    }
 
-/* =========================================================
-   STREAMING
-========================================================= */
+    statusText.textContent =
+        getApiKey()
+            ? "готова"
+            : "ключ не подключён";
+}
 
-function scheduleStreamRender(){
+/* -------------------------------------------------------
+   API MESSAGE FORMAT
+------------------------------------------------------- */
 
-  if(state.renderTimer)
-    return;
+function buildApiMessages(){
+    const result = [];
 
-  state.renderTimer =
-    setTimeout(
-      () => {
+    for(const message of state.messages){
+        if(message.role !== "user" && message.role !== "assistant"){
+            continue;
+        }
 
-        state.renderTimer =
-          null;
+        result.push({
+            role:message.role,
+            content:message.content
+        });
+    }
 
-        if(!state.streamBody)
-          return;
+    return result;
+}
 
-        const shouldScroll =
-          nearBottom();
+function getSelectedModel(){
+    const selected = modelSelect.value;
 
-        /*
-          Do not rebuild the entire DOM
-          on every token.
-        */
+    if(selected === "astra"){
+        try{
+            return localStorage.getItem(STORAGE.astra) || "astra";
+        }catch{
+            return "astra";
+        }
+    }
 
-        state.streamBody.textContent =
-          state.answerBuffer;
+    return selected;
+}
 
-        if(shouldScroll){
+/* -------------------------------------------------------
+   API RESPONSE PARSER
+------------------------------------------------------- */
 
-          requestAnimationFrame(
-            () => {
+function extractContent(data){
+    if(!data) return "";
 
-              const chat =
-                $("#chat");
+    if(typeof data === "string"){
+        return data;
+    }
 
-              chat.scrollTop =
-                chat.scrollHeight;
+    if(data.choices && data.choices[0]){
 
+        const choice = data.choices[0];
+
+        if(choice.message){
+            const content = choice.message.content;
+
+            if(typeof content === "string"){
+                return content;
             }
-          );
 
+            if(Array.isArray(content)){
+                return content
+                    .map(x => x.text || "")
+                    .join("");
+            }
         }
 
-      },
-      55
-    );
-
-}
-
-
-function parseSSELine(line){
-
-  if(!line)
-    return null;
-
-  let raw =
-    line.trim();
-
-  if(!raw)
-    return null;
-
-  if(raw.startsWith("data:")){
-
-    raw =
-      raw.slice(5).trim();
-
-  }
-
-  if(!raw || raw === "[DONE]")
-    return null;
-
-  try{
-
-    return JSON.parse(raw);
-
-  }catch{
-
-    return null;
-
-  }
-
-}
-
-
-function extractDelta(data){
-
-  if(!data)
-    return "";
-
-  const choice =
-    data.choices?.[0];
-
-  if(!choice)
-    return "";
-
-  const delta =
-    choice.delta;
-
-  if(typeof delta?.content === "string")
-    return delta.content;
-
-  if(typeof choice.text === "string")
-    return choice.text;
-
-  if(typeof data.content === "string")
-    return data.content;
-
-  return "";
-
-}
-
-
-/* =========================================================
-   SEND
-========================================================= */
-
-async function send(){
-
-  if(state.busy){
-
-    stopGeneration();
-
-    return;
-
-  }
-
-  const input =
-    $("#input");
-
-  const text =
-    input.value.trim();
-
-  if(!text && !state.files.length){
-
-    input.focus();
-
-    return;
-
-  }
-
-  const key =
-    getKey();
-
-  if(!key){
-
-    openKeyModal();
-
-    toast("Сначала добавьте API key");
-
-    return;
-
-  }
-
-  const content =
-    buildUserContent(text);
-
-  state.messages.push({
-
-    role:"user",
-
-    content
-
-  });
-
-  $("#welcome").style.display =
-    "none";
-
-  addMessage(
-    "user",
-    text ||
-    (
-      state.files.length
-        ? state.files
-            .map(x => `📎 ${x.name}`)
-            .join("\n")
-        : ""
-    ),
-    true
-  );
-
-  input.value = "";
-
-  autoResize();
-
-  state.files = [];
-
-  renderFileRow();
-
-  updateTokenInfo();
-
-  state.busy = true;
-
-  state.answerBuffer = "";
-
-  state.streamBody = null;
-
-  $("#sendBtn").classList.add("stop");
-
-  $("#sendBtn").textContent =
-    "■";
-
-  state.controller =
-    new AbortController();
-
-  startThinking();
-
-  try{
-
-    const response =
-      await fetch(
-        API_URL,
-        {
-          method:"POST",
-
-          headers:{
-            "Content-Type":
-              "application/json",
-
-            "Authorization":
-              `Bearer ${key}`
-          },
-
-          body:JSON.stringify({
-
-            model:apiModel(),
-
-            messages:[
-              {
-                role:"system",
-                content:SYSTEM
-              },
-
-              ...state.messages
-            ],
-
-            stream:true,
-
-            max_tokens:16384,
-
-            temperature:.25
-
-          }),
-
-          signal:
-            state.controller.signal
-
+        if(choice.delta){
+            const delta = choice.delta.content;
+
+            if(typeof delta === "string"){
+                return delta;
+            }
+
+            if(Array.isArray(delta)){
+                return delta
+                    .map(x => x.text || "")
+                    .join("");
+            }
         }
-      );
 
-    if(!response.ok){
+        if(typeof choice.text === "string"){
+            return choice.text;
+        }
+    }
 
-      const errorText =
-        await response.text();
+    if(typeof data.content === "string"){
+        return data.content;
+    }
 
-      throw new Error(
-        `API ${response.status}: ${errorText.slice(0,500)}`
-      );
+    return "";
+}
 
+/* -------------------------------------------------------
+   SSE STREAM
+------------------------------------------------------- */
+
+async function readResponse(response,onChunk){
+    const contentType =
+        response.headers.get("content-type") || "";
+
+    /*
+        Normal JSON response.
+    */
+
+    if(
+        contentType.includes("application/json") &&
+        !contentType.includes("text/event-stream")
+    ){
+        const data = await response.json();
+
+        const content = extractContent(data);
+
+        if(content){
+            onChunk(content);
+        }
+
+        return;
     }
 
     if(!response.body){
+        const text = await response.text();
 
-      throw new Error(
-        "API не вернул streaming body"
-      );
+        if(text){
+            onChunk(text);
+        }
 
+        return;
     }
 
-    stopThinking();
-
-    const assistant =
-      addMessage(
-        "assistant",
-        "",
-        true
-      );
-
-    const contentEl =
-      assistant.bubble.querySelector(".md");
-
-    state.streamBody =
-      contentEl;
-
-    const reader =
-      response.body.getReader();
-
-    const decoder =
-      new TextDecoder();
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
 
     let buffer = "";
 
     while(true){
+        const {value,done} = await reader.read();
 
-      const result =
-        await reader.read();
+        if(done) break;
 
-      if(result.done)
-        break;
-
-      buffer +=
-        decoder.decode(
-          result.value,
-          {
+        buffer += decoder.decode(value,{
             stream:true
-          }
-        );
-
-      const lines =
-        buffer.split(/\r?\n/);
-
-      buffer =
-        lines.pop() || "";
-
-      for(const line of lines){
-
-        const data =
-          parseSSELine(line);
-
-        if(!data)
-          continue;
-
-        const delta =
-          extractDelta(data);
-
-        if(!delta)
-          continue;
-
-        state.answerBuffer +=
-          delta;
-
-        scheduleStreamRender();
-
-      }
-
-    }
-
-    /*
-      Handle final partial line.
-    */
-
-    if(buffer.trim()){
-
-      const data =
-        parseSSELine(buffer);
-
-      const delta =
-        extractDelta(data);
-
-      if(delta){
-
-        state.answerBuffer +=
-          delta;
-
-      }
-
-    }
-
-    if(state.renderTimer){
-
-      clearTimeout(
-        state.renderTimer
-      );
-
-      state.renderTimer =
-        null;
-
-    }
-
-    /*
-      Final render as markdown.
-    */
-
-    contentEl.innerHTML = "";
-
-    const rendered =
-      renderMarkdown(
-        state.answerBuffer ||
-        "Пустой ответ от модели."
-      );
-
-    contentEl.innerHTML =
-      rendered.html;
-
-    bindCodeButtons(
-      contentEl,
-      rendered.codeBlocks
-    );
-
-    state.messages.push({
-
-      role:"assistant",
-
-      content:
-        state.answerBuffer ||
-        "Пустой ответ от модели."
-
-    });
-
-    persistCurrentChat();
-
-    scrollBottom(true);
-
-  }catch(error){
-
-    stopThinking();
-
-    if(
-      error?.name === "AbortError"
-    ){
-
-      if(
-        state.answerBuffer.trim()
-      ){
-
-        state.messages.push({
-
-          role:"assistant",
-
-          content:
-            state.answerBuffer
-
         });
 
-        persistCurrentChat();
+        const events = buffer.split(/\r?\n\r?\n/);
 
-      }
+        buffer = events.pop() || "";
 
-      toast("Генерация остановлена");
+        for(const event of events){
+            processSSEEvent(event,onChunk);
+        }
+    }
+
+    buffer += decoder.decode();
+
+    if(buffer.trim()){
+        processSSEEvent(buffer,onChunk);
+    }
+}
+
+function processSSEEvent(event,onChunk){
+    const lines = event.split(/\r?\n/);
+
+    const dataLines = [];
+
+    for(const line of lines){
+        if(line.startsWith("data:")){
+            dataLines.push(
+                line.slice(5).trimStart()
+            );
+        }
+    }
+
+    if(!dataLines.length){
+        return;
+    }
+
+    const dataText = dataLines.join("\n").trim();
+
+    if(!dataText || dataText === "[DONE]"){
+        return;
+    }
+
+    try{
+        const parsed = JSON.parse(dataText);
+        const content = extractContent(parsed);
+
+        if(content){
+            onChunk(content);
+        }
+    }catch{
+        /*
+            Some proxies/providers can emit plain text data.
+        */
+
+        onChunk(dataText);
+    }
+}
+
+/* -------------------------------------------------------
+   SEND
+------------------------------------------------------- */
+
+async function sendMessage(){
+    if(state.busy){
+        stopRequest();
+        return;
+    }
+
+    const apiKey = getApiKey();
+
+    if(!apiKey){
+        openKeyModal();
+        return;
+    }
+
+    const text = promptEl.value.trim();
+
+    if(!text && !state.attachment){
+        promptEl.focus({preventScroll:true});
+        return;
+    }
+
+    const attachment = state.attachment;
+
+    let userContent;
+
+    if(attachment?.isImage){
+
+        const parts = [];
+
+        if(text){
+            parts.push({
+                type:"text",
+                text
+            });
+        }
+
+        parts.push({
+            type:"image_url",
+            image_url:{
+                url:attachment.data
+            }
+        });
+
+        userContent = parts;
+
+    }else if(attachment?.text){
+
+        userContent =
+            text +
+            "\n\n[Прикреплённый файл: " +
+            attachment.name +
+            "]\n\n" +
+            attachment.text;
 
     }else{
 
-      console.error(
-        "NZX AI error:",
-        error
-      );
-
-      const errorMessage =
-        error?.message ||
-        "Неизвестная ошибка";
-
-      addMessage(
-        "assistant",
-        `Ошибка: ${errorMessage}`,
-        true
-      );
-
-      toast("Ошибка API");
-
+        userContent = text;
     }
 
-  }finally{
+    const userMessage = {
+        id:makeId(),
+        role:"user",
+        content:userContent,
+        createdAt:Date.now(),
+        fileName:attachment?.name || null
+    };
 
-    state.busy = false;
+    state.messages.push(userMessage);
 
-    state.controller =
-      null;
+    /*
+        Save immediately before network request.
+        Even if API crashes, user's message remains.
+    */
+    saveCurrentChat();
 
-    state.streamBody =
-      null;
+    appendMessageToDOM(userMessage);
 
-    $("#sendBtn")
-      .classList
-      .remove("stop");
+    promptEl.value = "";
+    resizeTextarea();
 
-    $("#sendBtn").textContent =
-      "↑";
+    clearAttachment();
 
-  }
+    scrollBottom(true);
 
-}
+    /*
+        Assistant placeholder.
+    */
 
+    const assistantMessage = {
+        id:makeId(),
+        role:"assistant",
+        content:"",
+        createdAt:Date.now()
+    };
 
-/* =========================================================
-   CODE BUTTONS
-========================================================= */
+    state.messages.push(assistantMessage);
 
-function bindCodeButtons(
-  container,
-  blocks
-){
+    const assistantElement =
+        appendMessageToDOM(assistantMessage);
 
-  blocks.forEach(
-    (block,index) => {
+    const body =
+        assistantElement.querySelector(".msg-text");
 
-      const copy =
-        container.querySelector(
-          `[data-copy-code="${index}"]`
-        );
+    body.innerHTML = `
+        <span class="thinking">
+            <span class="thinking-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+            </span>
+            <span>думаю</span>
+        </span>
+    `;
 
-      const download =
-        container.querySelector(
-          `[data-download-code="${index}"]`
-        );
+    state.busy = true;
+    state.controller = new AbortController();
 
-      if(copy){
+    sendBtn.classList.add("stop");
+    sendIcon.textContent = "■";
 
-        copy.addEventListener(
-          "click",
-          async () => {
+    startThinking();
+
+    scrollBottom(true);
+
+    let answer = "";
+    let lastRender = 0;
+
+    try{
+
+        const messages = [
+            {
+                role:"system",
+                content:SYSTEM_PROMPT
+            },
+            ...buildApiMessages()
+        ];
+
+        const response = await fetch(API_URL,{
+            method:"POST",
+
+            headers:{
+                "Authorization":"Bearer " + apiKey,
+                "Content-Type":"application/json",
+                "Accept":"text/event-stream, application/json"
+            },
+
+            body:JSON.stringify({
+                model:getSelectedModel(),
+                messages,
+                stream:true,
+                temperature:.25,
+                max_tokens:16384
+            }),
+
+            signal:state.controller.signal
+        });
+
+        if(!response.ok){
+
+            let errorText = "";
 
             try{
+                errorText = await response.text();
+            }catch{}
 
-              await navigator.clipboard.writeText(
-                block.code
-              );
-
-              toast(
-                "Код скопирован"
-              );
-
-            }catch{
-
-              toast(
-                "Не удалось скопировать"
-              );
-
-            }
-
-          }
-        );
-
-      }
-
-      if(download){
-
-        download.addEventListener(
-          "click",
-          () => {
-
-            downloadText(
-              block.code,
-              filenameFor(
-                block.code,
-                block.language
-              )
+            throw new Error(
+                "API " +
+                response.status +
+                (errorText ? ": " + errorText.slice(0,700) : "")
             );
+        }
 
-          }
-        );
+        await readResponse(response,(chunk) => {
 
-      }
+            /*
+                Some providers can repeat the whole content in JSON.
+                Prefer accumulating normal deltas.
+            */
 
-    }
-  );
+            if(!chunk) return;
 
-}
+            answer += chunk;
 
+            const now = performance.now();
 
-function stopGeneration(){
+            /*
+                Do not render on every token.
+                ~60ms keeps the interface responsive.
+            */
+            if(now - lastRender >= 60){
 
-  if(
-    state.controller
-  ){
+                body.innerHTML =
+                    renderMarkdown(answer);
 
-    state.controller.abort();
+                lastRender = now;
 
-  }
+                scrollBottom(false);
+            }
+        });
 
-}
+        body.innerHTML =
+            answer
+                ? renderMarkdown(answer)
+                : "<span style='color:rgba(255,255,255,.4)'>Пустой ответ.</span>";
 
+        assistantMessage.content = answer;
 
-/* =========================================================
-   INPUT
-========================================================= */
+        saveCurrentChat();
 
-function autoResize(){
+        scrollBottom(false);
 
-  const input =
-    $("#input");
+    }catch(error){
 
-  input.style.height =
-    "auto";
+        if(error.name === "AbortError"){
 
-  input.style.height =
-    Math.min(
-      input.scrollHeight,
-      180
-    ) + "px";
+            /*
+                Stop button:
+                keep partial answer permanently.
+            */
 
-}
+            assistantMessage.content = answer;
 
-
-function updateTokenInfo(){
-
-  const value =
-    $("#input").value;
-
-  $("#tokenInfo").textContent =
-    `${value.length.toLocaleString("ru-RU")} символов`;
-
-}
-
-
-/* =========================================================
-   SATURN PARTICLES
-========================================================= */
-
-function startSaturn(){
-
-  const canvas =
-    $("#space");
-
-  const ctx =
-    canvas.getContext(
-      "2d",
-      {
-        alpha:true
-      }
-    );
-
-  if(!ctx)
-    return;
-
-  let width =
-    window.innerWidth;
-
-  let height =
-    window.innerHeight;
-
-  let dpr =
-    Math.min(
-      window.devicePixelRatio || 1,
-      2
-    );
-
-  let particles = [];
-
-  let ringParticles = [];
-
-  let stars = [];
-
-  let rotation = 0;
-
-  let lastTime =
-    performance.now();
-
-
-  function resize(){
-
-    width =
-      window.innerWidth;
-
-    height =
-      window.innerHeight;
-
-    dpr =
-      Math.min(
-        window.devicePixelRatio || 1,
-        2
-      );
-
-    canvas.width =
-      width * dpr;
-
-    canvas.height =
-      height * dpr;
-
-    canvas.style.width =
-      width + "px";
-
-    canvas.style.height =
-      height + "px";
-
-    ctx.setTransform(
-      dpr,
-      0,
-      0,
-      dpr,
-      0,
-      0
-    );
-
-    createScene();
-
-  }
-
-
-  function randomNormal(){
-
-    let u =
-      0;
-
-    let v =
-      0;
-
-    while(u === 0)
-      u = Math.random();
-
-    while(v === 0)
-      v = Math.random();
-
-    return Math.sqrt(
-      -2 *
-      Math.log(u)
-    ) *
-    Math.cos(
-      Math.PI * 2 * v
-    );
-
-  }
-
-
-  function createScene(){
-
-    particles = [];
-
-    ringParticles = [];
-
-    stars = [];
-
-    /*
-      More particles on desktop,
-      fewer on mobile for performance.
-    */
-
-    const mobile =
-      width < 700;
-
-    const count =
-      mobile ? 1050 : 1900;
-
-    const ringCount =
-      mobile ? 500 : 900;
-
-    const starCount =
-      mobile ? 350 : 700;
-
-
-    for(let i=0;i<count;i++){
-
-      /*
-        Sphere distribution.
-      */
-
-      const u =
-        Math.random();
-
-      const v =
-        Math.random();
-
-      const theta =
-        2 *
-        Math.PI *
-        u;
-
-      const phi =
-        Math.acos(
-          2 * v - 1
-        );
-
-      const r =
-        Math.sqrt(
-          Math.random()
-        );
-
-      particles.push({
-
-        theta,
-
-        phi,
-
-        r,
-
-        size:
-          .35 +
-          Math.random() * 1.05,
-
-        alpha:
-          .25 +
-          Math.random() * .75
-
-      });
-
-    }
-
-
-    for(let i=0;i<ringCount;i++){
-
-      const angle =
-        Math.random() *
-        Math.PI *
-        2;
-
-      /*
-        Saturn ring has multiple bands.
-      */
-
-      const radius =
-        1.20 +
-        Math.random() * .72;
-
-      ringParticles.push({
-
-        angle,
-
-        radius,
-
-        y:
-          (Math.random()-.5) *
-          .055,
-
-        size:
-          .3 +
-          Math.random() * .85,
-
-        alpha:
-          .2 +
-          Math.random() * .7
-
-      });
-
-    }
-
-
-    for(let i=0;i<starCount;i++){
-
-      stars.push({
-
-        x:
-          Math.random() * width,
-
-        y:
-          Math.random() * height,
-
-        size:
-          .25 +
-          Math.random() * .65,
-
-        alpha:
-          .15 +
-          Math.random() * .5,
-
-        twinkle:
-          Math.random() * 6.28
-
-      });
-
-    }
-
-  }
-
-
-  function draw(now){
-
-    const delta =
-      Math.min(
-        now - lastTime,
-        50
-      );
-
-    lastTime =
-      now;
-
-    rotation +=
-      delta * .00012;
-
-    ctx.clearRect(
-      0,
-      0,
-      width,
-      height
-    );
-
-
-    /*
-      Stars
-    */
-
-    for(const star of stars){
-
-      const pulse =
-        star.alpha *
-        (
-          .7 +
-          .3 *
-          Math.sin(
-            now * .001 +
-            star.twinkle
-          )
-        );
-
-      ctx.fillStyle =
-        `rgba(255,255,255,${pulse})`;
-
-      ctx.beginPath();
-
-      ctx.arc(
-        star.x,
-        star.y,
-        star.size,
-        0,
-        Math.PI * 2
-      );
-
-      ctx.fill();
-
-    }
-
-
-    /*
-      Put Saturn slightly right
-      and behind the chat.
-    */
-
-    const isMobile =
-      width < 700;
-
-    const cx =
-      width *
-      (isMobile ? .72 : .69);
-
-    const cy =
-      height *
-      .48;
-
-    const radius =
-      Math.min(
-        width,
-        height
-      ) *
-      (isMobile ? .19 : .24);
-
-
-    /*
-      Planet glow
-    */
-
-    const glow =
-      ctx.createRadialGradient(
-        cx,
-        cy,
-        radius * .3,
-        cx,
-        cy,
-        radius * 1.8
-      );
-
-    glow.addColorStop(
-      0,
-      "rgba(255,255,255,.07)"
-    );
-
-    glow.addColorStop(
-      .35,
-      "rgba(255,255,255,.025)"
-    );
-
-    glow.addColorStop(
-      1,
-      "rgba(255,255,255,0)"
-    );
-
-    ctx.fillStyle =
-      glow;
-
-    ctx.beginPath();
-
-    ctx.arc(
-      cx,
-      cy,
-      radius * 1.8,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
-
-
-    /*
-      Sort planet particles
-      by approximate depth.
-    */
-
-    const projected = [];
-
-    for(const p of particles){
-
-      const a =
-        p.theta +
-        rotation;
-
-      const x =
-        Math.sin(p.phi) *
-        Math.cos(a) *
-        p.r;
-
-      const y =
-        Math.cos(p.phi) *
-        p.r;
-
-      const z =
-        Math.sin(p.phi) *
-        Math.sin(a) *
-        p.r;
-
-      projected.push({
-
-        x,
-        y,
-        z,
-
-        size:
-          p.size *
-          (
-            .72 +
-            .28 *
-            ((z + 1) / 2)
-          ),
-
-        alpha:
-          p.alpha *
-          (
-            .28 +
-            .72 *
-            ((z + 1) / 2)
-          )
-
-      });
-
-    }
-
-
-    projected.sort(
-      (a,b) =>
-        a.z - b.z
-    );
-
-
-    /*
-      Planet
-    */
-
-    for(const p of projected){
-
-      const px =
-        cx +
-        p.x *
-        radius;
-
-      const py =
-        cy +
-        p.y *
-        radius;
-
-      ctx.fillStyle =
-        `rgba(255,255,255,${p.alpha})`;
-
-      ctx.beginPath();
-
-      ctx.arc(
-        px,
-        py,
-        p.size,
-        0,
-        Math.PI * 2
-      );
-
-      ctx.fill();
-
-    }
-
-
-    /*
-      Rings behind/around planet.
-
-      Draw far half first.
-    */
-
-    function drawRing(front){
-
-      for(const p of ringParticles){
-
-        const angle =
-          p.angle +
-          rotation *
-          .75;
-
-        const x =
-          Math.cos(angle) *
-          p.radius;
-
-        const z =
-          Math.sin(angle) *
-          p.radius;
-
-        /*
-          Elliptical projection.
-        */
-
-        const px =
-          cx +
-          x *
-          radius *
-          1.12;
-
-        const py =
-          cy +
-          p.y *
-          radius +
-          z *
-          radius *
-          .34;
-
-        const isFront =
-          z > 0;
-
-        if(isFront !== front)
-          continue;
-
-        const alpha =
-          p.alpha *
-          (
-            .3 +
-            .7 *
-            ((z + 1.5) / 3)
-          );
-
-        ctx.fillStyle =
-          `rgba(255,255,255,${alpha})`;
-
-        ctx.beginPath();
-
-        ctx.arc(
-          px,
-          py,
-          p.size,
-          0,
-          Math.PI * 2
-        );
-
-        ctx.fill();
-
-      }
-
-    }
-
-
-    /*
-      Far ring
-    */
-
-    drawRing(false);
-
-    /*
-      Redraw planet silhouette-ish
-      using a very subtle black transparent
-      circle so front ring can sit naturally.
-    */
-
-    ctx.save();
-
-    ctx.globalCompositeOperation =
-      "source-over";
-
-    ctx.fillStyle =
-      "rgba(0,0,0,.02)";
-
-    ctx.beginPath();
-
-    ctx.arc(
-      cx,
-      cy,
-      radius * .97,
-      0,
-      Math.PI * 2
-    );
-
-    ctx.fill();
-
-    ctx.restore();
-
-
-    /*
-      Front ring
-    */
-
-    drawRing(true);
-
-
-    requestAnimationFrame(
-      draw
-    );
-
-  }
-
-
-  window.addEventListener(
-    "resize",
-    resize,
-    {
-      passive:true
-    }
-  );
-
-  resize();
-
-  requestAnimationFrame(
-    draw
-  );
-
-}
-
-
-/* =========================================================
-   EVENT BINDINGS
-========================================================= */
-
-function init(){
-
-  /*
-    Key
-  */
-
-  $("#keyBtn")
-    .addEventListener(
-      "click",
-      openKeyModal
-    );
-
-  $("#keyState")
-    .addEventListener(
-      "click",
-      openKeyModal
-    );
-
-  $("#saveKey")
-    .addEventListener(
-      "click",
-      saveKey
-    );
-
-
-  /*
-    Profile
-  */
-
-  $("#profileBtn")
-    .addEventListener(
-      "click",
-      openProfile
-    );
-
-  $("#profileTop")
-    .addEventListener(
-      "click",
-      openProfile
-    );
-
-  $("#saveProfile")
-    .addEventListener(
-      "click",
-      saveProfile
-    );
-
-
-  /*
-    Modals
-  */
-
-  $$(".closeModal")
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          "click",
-          closeModals
-        );
-
-      }
-    );
-
-
-  $$(".modal")
-    .forEach(
-      modal => {
-
-        modal.addEventListener(
-          "click",
-          event => {
-
-            if(event.target === modal){
-
-              modal.classList.remove(
-                "show"
-              );
-
+            if(answer){
+                body.innerHTML = renderMarkdown(answer);
+            }else{
+                body.innerHTML =
+                    '<span style="color:rgba(255,255,255,.4)">Запрос остановлен.</span>';
             }
 
-          }
-        );
+            saveCurrentChat();
 
-      }
-    );
+        }else{
 
+            console.error(error);
 
-  document.addEventListener(
-    "keydown",
-    event => {
+            const message =
+                error?.message ||
+                "Неизвестная ошибка.";
 
-      if(event.key === "Escape"){
+            assistantMessage.content =
+                answer ||
+                "Ошибка: " + message;
 
-        closeModals();
+            body.innerHTML =
+                answer
+                    ? renderMarkdown(answer)
+                    : `
+                        <span style="color:#ff8c8c">
+                            Ошибка: ${escapeHtml(message)}
+                        </span>
+                    `;
 
-      }
+            /*
+                Save error/partial state too.
+            */
+            saveCurrentChat();
 
-    }
-  );
+            showToast(
+                message.includes("Failed to fetch")
+                    ? "Не удалось подключиться к API. Проверь ключ и CORS."
+                    : message.slice(0,220)
+            );
+        }
 
+    }finally{
 
-  /*
-    New chat
-  */
+        state.busy = false;
+        state.controller = null;
 
-  $("#newChat")
-    .addEventListener(
-      "click",
-      newChat
-    );
+        sendBtn.classList.remove("stop");
+        sendIcon.textContent = "↑";
 
-
-  /*
-    Attach
-  */
-
-  $("#attachBtn")
-    .addEventListener(
-      "click",
-      () => {
-
-        $("#fileInput").click();
-
-      }
-    );
-
-
-  $("#fileInput")
-    .addEventListener(
-      "change",
-      async event => {
-
-        await chooseFiles(
-          event.target.files
-        );
+        stopThinking();
 
         /*
-          Reset value so selecting
-          the same file again works.
+            One final persistence pass.
         */
+        saveCurrentChat();
 
-        event.target.value =
-          "";
+        renderHistory();
 
-      }
-    );
+        scrollBottom(false);
+    }
+}
 
+function stopRequest(){
+    if(state.controller){
+        state.controller.abort();
+    }
+}
 
-  /*
-    Remove files
-  */
+/* -------------------------------------------------------
+   CODE COPY
+------------------------------------------------------- */
 
-  $("#fileRow")
-    .addEventListener(
-      "click",
-      event => {
+document.addEventListener("click",async event => {
 
-        const button =
-          event.target.closest(
-            "[data-file-index]"
-          );
+    const button =
+        event.target.closest("[data-copy-code]");
 
-        if(!button)
-          return;
+    if(!button) return;
 
-        removeFile(
-          Number(
-            button.dataset.fileIndex
-          )
+    const code =
+        decodeBase64Unicode(
+            button.getAttribute("data-copy-code") || ""
         );
 
-      }
+    if(!code) return;
+
+    try{
+        await navigator.clipboard.writeText(code);
+
+        const old = button.textContent;
+        button.textContent = "Скопировано";
+
+        setTimeout(() => {
+            button.textContent = old;
+        },1200);
+
+    }catch{
+        showToast("Не удалось скопировать.");
+    }
+});
+
+/* -------------------------------------------------------
+   DOWNLOAD CODE HELPER
+------------------------------------------------------- */
+
+function downloadCodeFile(content,filename){
+    const blob = new Blob(
+        [content],
+        {type:"text/plain;charset=utf-8"}
     );
 
+    const url = URL.createObjectURL(blob);
 
-  /*
-    Send
-  */
+    const a = document.createElement("a");
 
-  $("#sendBtn")
-    .addEventListener(
-      "click",
-      send
-    );
+    a.href = url;
+    a.download = filename;
+    a.click();
 
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+    },1000);
+}
 
-  /*
-    Input
-  */
+/*
+    Expose it for future UI extensions.
+*/
+window.NZXDownload = downloadCodeFile;
 
-  $("#input")
-    .addEventListener(
-      "input",
-      () => {
+/* -------------------------------------------------------
+   EVENTS
+------------------------------------------------------- */
 
-        autoResize();
-
-        updateTokenInfo();
-
-      }
-    );
-
-
-  $("#input")
-    .addEventListener(
-      "keydown",
-      event => {
-
-        if(
-          event.key === "Enter" &&
-          !event.shiftKey
-        ){
-
-          event.preventDefault();
-
-          send();
-
-        }
-
-      }
-    );
-
-
-  /*
-    Suggestions
-  */
-
-  $$(".suggestion")
-    .forEach(
-      button => {
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            $("#input").value =
-              button.dataset.prompt || "";
-
-            autoResize();
-
-            updateTokenInfo();
-
-            $("#input").focus();
-
-          }
-        );
-
-      }
-    );
-
-
-  /*
-    Model
-  */
-
-  $("#model")
-    .addEventListener(
-      "change",
-      () => {
-
-        if(
-          $("#model").value === "astra" &&
-          !localStorage.getItem(
-            STORAGE.astra
-          )
-        ){
-
-          openKeyModal();
-
-        }
-
-      }
-    );
-
-
-  /*
-    Mobile sidebar
-  */
-
-  $("#mobileMenu")
-    .addEventListener(
-      "click",
-      () => {
-
-        $("#sidebar")
-          .classList
-          .toggle("open");
-
-      }
-    );
-
-
-  /*
-    Close mobile sidebar
-    when clicking main area.
-  */
-
-  $(".main")
-    .addEventListener(
-      "click",
-      () => {
-
-        if(
-          window.innerWidth <= 850
-        ){
-
-          $("#sidebar")
-            .classList
-            .remove("open");
-
-        }
-
-      }
-    );
-
-
-  /*
-    Do not close sidebar when
-    interacting inside it.
-  */
-
-  $("#sidebar")
-    .addEventListener(
-      "click",
-      event => {
-
-        event.stopPropagation();
-
-      }
-    );
-
-
-  /*
-    Track manual scrolling.
-    Autoscroll is allowed only when
-    the user is already near the bottom.
-  */
-
-  $("#chat")
-    .addEventListener(
-      "scroll",
-      () => {
-
-        state.userScrolling =
-          !nearBottom();
-
-      },
-      {
-        passive:true
-      }
-    );
-
-
-  /*
-    Global delegated code buttons.
-    This also works for dynamically
-    generated streaming messages.
-  */
-
-  document.addEventListener(
+$("newChat").addEventListener(
     "click",
+    () => createFreshChat(true)
+);
+
+$("keyBtn").addEventListener(
+    "click",
+    openKeyModal
+);
+
+$("topKeyBtn").addEventListener(
+    "click",
+    openKeyModal
+);
+
+$("closeKey").addEventListener(
+    "click",
+    closeKeyModal
+);
+
+$("saveKey").addEventListener(
+    "click",
+    saveKey
+);
+
+$("profileBtn").addEventListener(
+    "click",
+    openProfile
+);
+
+$("topProfileBtn").addEventListener(
+    "click",
+    openProfile
+);
+
+$("closeProfile").addEventListener(
+    "click",
+    closeProfile
+);
+
+$("saveProfile").addEventListener(
+    "click",
+    saveProfile
+);
+
+$("attachBtn").addEventListener(
+    "click",
+    () => $("fileInput").click()
+);
+
+$("fileInput").addEventListener(
+    "change",
+    event => {
+        const file = event.target.files?.[0];
+
+        if(file){
+            handleFile(file);
+        }
+    }
+);
+
+$("removeFile").addEventListener(
+    "click",
+    clearAttachment
+);
+
+$("sendBtn").addEventListener(
+    "click",
+    sendMessage
+);
+
+$("menuBtn").addEventListener(
+    "click",
+    () => {
+        $("sidebar").classList.toggle("mobile-open");
+    }
+);
+
+document.querySelectorAll(".suggestion").forEach(button => {
+
+    button.addEventListener("click",() => {
+
+        promptEl.value =
+            button.dataset.prompt || "";
+
+        resizeTextarea();
+
+        promptEl.focus({preventScroll:true});
+    });
+});
+
+promptEl.addEventListener("keydown",event => {
+
+    if(event.key === "Enter" && !event.shiftKey){
+
+        event.preventDefault();
+
+        sendMessage();
+    }
+});
+
+$("keyModal").addEventListener("click",event => {
+    if(event.target === $("keyModal")){
+        closeKeyModal();
+    }
+});
+
+$("profileModal").addEventListener("click",event => {
+    if(event.target === $("profileModal")){
+        closeProfile();
+    }
+});
+
+document.addEventListener("keydown",event => {
+
+    if(event.key === "Escape"){
+
+        closeKeyModal();
+        closeProfile();
+
+        $("sidebar").classList.remove("mobile-open");
+    }
+});
+
+/* -------------------------------------------------------
+   AVATAR
+------------------------------------------------------- */
+
+$("avatarBtn").addEventListener(
+    "click",
+    () => $("avatarInput").click()
+);
+
+$("avatarInput").addEventListener(
+    "change",
     async event => {
 
-      const copy =
-        event.target.closest(
-          "[data-copy-code]"
-        );
+        const file =
+            event.target.files?.[0];
 
-      if(copy){
+        if(!file) return;
 
-        const wrap =
-          copy.closest(
-            ".code-wrap"
-          );
-
-        const code =
-          wrap?.querySelector(
-            "code"
-          )?.textContent || "";
+        if(file.size > 3 * 1024 * 1024){
+            showToast("Аватар должен быть меньше 3 MB.");
+            return;
+        }
 
         try{
 
-          await navigator.clipboard.writeText(
-            code
-          );
+            const data =
+                await readAsDataURL(file);
 
-          toast("Код скопирован");
+            state.profile.avatar = data;
+
+            $("avatarPreview").src = data;
 
         }catch{
-
-          toast(
-            "Браузер не разрешил копирование"
-          );
-
+            showToast("Не удалось загрузить аватар.");
         }
-
-        return;
-      }
-
-      const download =
-        event.target.closest(
-          "[data-download-code]"
-        );
-
-      if(download){
-
-        const wrap =
-          download.closest(
-            ".code-wrap"
-          );
-
-        const code =
-          wrap?.querySelector(
-            "code"
-          )?.textContent || "";
-
-        downloadText(
-          code,
-          "nzx-code.txt"
-        );
-
-      }
-
     }
-  );
+);
 
+/* -------------------------------------------------------
+   TOAST
+------------------------------------------------------- */
 
-  /*
-    Prevent accidental browser
-    drag/drop navigation.
-  */
+let toastTimer = null;
 
-  window.addEventListener(
-    "dragover",
-    event => {
-      event.preventDefault();
-    }
-  );
+function showToast(message){
+    const toast = $("toast");
 
-  window.addEventListener(
-    "drop",
-    event => {
+    toast.textContent = message;
+    toast.classList.add("show");
 
-      event.preventDefault();
+    clearTimeout(toastTimer);
 
-      const files =
-        event.dataTransfer?.files;
-
-      if(files?.length){
-
-        chooseFiles(files);
-
-      }
-
-    }
-  );
-
-
-  /*
-    Error diagnostics.
-    They no longer silently kill
-    the interface.
-  */
-
-  window.addEventListener(
-    "error",
-    event => {
-
-      console.error(
-        "NZX JS error:",
-        event.error ||
-        event.message
-      );
-
-    }
-  );
-
-
-  window.addEventListener(
-    "unhandledrejection",
-    event => {
-
-      console.error(
-        "NZX promise error:",
-        event.reason
-      );
-
-    }
-  );
-
-
-  /*
-    Initial state
-  */
-
-  renderProfile();
-
-  updateKeyState();
-
-  renderHistory();
-
-  renderFileRow();
-
-  autoResize();
-
-  updateTokenInfo();
-
-  startSaturn();
-
+    toastTimer = setTimeout(() => {
+        toast.classList.remove("show");
+    },2800);
 }
 
+/* -------------------------------------------------------
+   STORAGE SAFETY / PAGE LIFECYCLE
+------------------------------------------------------- */
 
-/* =========================================================
-   START
-========================================================= */
+window.addEventListener("beforeunload",() => {
 
-if(
-  document.readyState === "loading"
-){
+    /*
+        Never wipe anything here.
+        Only persist current state.
+    */
 
-  document.addEventListener(
-    "DOMContentLoaded",
-    init,
-    {
-      once:true
+    if(state.currentChatId){
+        saveCurrentChat();
     }
-  );
+});
+
+document.addEventListener("visibilitychange",() => {
+
+    /*
+        Persist when app goes to background.
+    */
+
+    if(document.visibilityState === "hidden"){
+        saveCurrentChat();
+    }
+});
+
+/* -------------------------------------------------------
+   SATURN
+   Lightweight canvas renderer.
+------------------------------------------------------- */
+
+(function initSpace(){
+
+    const canvas = $("spaceCanvas");
+    const ctx = canvas.getContext("2d",{
+        alpha:true,
+        desynchronized:true
+    });
+
+    if(!ctx) return;
+
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+
+    let stars = [];
+    let sphere = [];
+    let ring = [];
+
+    let rotation = 0;
+    let lastTime = performance.now();
+    let running = true;
+
+    /*
+        Device-aware particle count.
+        Never create thousands of DOM nodes.
+    */
+
+    function particleCount(){
+
+        const pixels =
+            window.innerWidth * window.innerHeight;
+
+        if(pixels < 500000){
+            return {
+                stars:70,
+                sphere:650,
+                ring:520
+            };
+        }
+
+        if(pixels < 1200000){
+            return {
+                stars:100,
+                sphere:850,
+                ring:700
+            };
+        }
+
+        return {
+            stars:130,
+            sphere:1050,
+            ring:850
+        };
+    }
+
+    function seededRandom(seed){
+        let x = seed;
+
+        return function(){
+            x = (x * 1664525 + 1013904223) >>> 0;
+            return x / 4294967296;
+        };
+    }
+
+    function buildParticles(){
+
+        const count = particleCount();
+
+        const random = seededRandom(9321);
+
+        stars = [];
+        sphere = [];
+        ring = [];
+
+        for(let i=0;i<count.stars;i++){
+
+            stars.push({
+                x:random(),
+                y:random(),
+                r:.25 + random() * 1.1,
+                a:.12 + random() * .42,
+                tw:random() * Math.PI * 2
+            });
+        }
+
+        /*
+            Fibonacci sphere.
+        */
+
+        for(let i=0;i<count.sphere;i++){
+
+            const y =
+                1 -
+                (i / (count.sphere - 1)) * 2;
+
+            const radius =
+                Math.sqrt(
+                    Math.max(0,1 - y*y)
+                );
+
+            const theta =
+                Math.PI *
+                (3 - Math.sqrt(5)) *
+                i;
+
+            sphere.push({
+                x:Math.cos(theta) * radius,
+                y,
+                z:Math.sin(theta) * radius,
+                size:.25 + random() * .8,
+                alpha:.2 + random() * .7
+            });
+        }
+
+        /*
+            Saturn rings.
+        */
+
+        for(let i=0;i<count.ring;i++){
+
+            const angle =
+                random() *
+                Math.PI *
+                2;
+
+            const radius =
+                .72 +
+                random() * .58;
+
+            ring.push({
+                angle,
+                radius,
+                size:.25 + random() * .75,
+                alpha:.18 + random() * .7
+            });
+        }
+    }
+
+    function resize(){
+
+        width = window.innerWidth;
+        height = window.innerHeight;
+
+        dpr = Math.min(
+            window.devicePixelRatio || 1,
+            1.5
+        );
+
+        canvas.width =
+            Math.floor(width * dpr);
+
+        canvas.height =
+            Math.floor(height * dpr);
+
+        canvas.style.width = width + "px";
+        canvas.style.height = height + "px";
+
+        ctx.setTransform(
+            dpr,
+            0,
+            0,
+            dpr,
+            0,
+            0
+        );
+
+        buildParticles();
+    }
+
+    function draw(now){
+
+        if(!running){
+            requestAnimationFrame(draw);
+            return;
+        }
+
+        const dt =
+            Math.min(50,now - lastTime);
+
+        lastTime = now;
+
+        rotation += dt * .00009;
+
+        ctx.clearRect(
+            0,
+            0,
+            width,
+            height
+        );
+
+        /*
+            Stars.
+        */
+
+        for(const star of stars){
+
+            const twinkle =
+                .65 +
+                Math.sin(now * .001 + star.tw) * .35;
+
+            ctx.globalAlpha =
+                star.a * twinkle;
+
+            ctx.fillStyle = "#fff";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                star.x * width,
+                star.y * height,
+                star.r,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+        const cx = width * .53;
+        const cy = height * .47;
+
+        const R =
+            Math.min(width,height) *
+            (width < 700 ? .22 : .27);
+
+        /*
+            Ring back.
+        */
+
+        ctx.save();
+
+        ctx.translate(cx,cy);
+
+        ctx.rotate(-.12);
+
+        for(const p of ring){
+
+            const a = p.angle + rotation * .8;
+
+            const x =
+                Math.cos(a) *
+                R *
+                p.radius;
+
+            const y =
+                Math.sin(a) *
+                R *
+                p.radius *
+                .26;
+
+            /*
+                Simple depth.
+            */
+
+            const depth =
+                Math.sin(a);
+
+            if(depth > .05) continue;
+
+            ctx.globalAlpha =
+                p.alpha * .35;
+
+            ctx.fillStyle = "#fff";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                p.size,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+        ctx.restore();
+
+        /*
+            Planet sphere.
+        */
+
+        for(const p of sphere){
+
+            const lon =
+                Math.atan2(p.z,p.x) +
+                rotation;
+
+            const lat =
+                Math.asin(p.y);
+
+            const cosLat =
+                Math.cos(lat);
+
+            const x3 =
+                cosLat * Math.cos(lon);
+
+            const y3 =
+                Math.sin(lat);
+
+            const z3 =
+                cosLat * Math.sin(lon);
+
+            /*
+                Only visible hemisphere.
+            */
+
+            if(z3 < -.05) continue;
+
+            const perspective =
+                .72 +
+                z3 * .28;
+
+            const x =
+                cx +
+                x3 * R * perspective;
+
+            const y =
+                cy +
+                y3 * R * perspective;
+
+            ctx.globalAlpha =
+                p.alpha *
+                (.35 + z3 * .55);
+
+            ctx.fillStyle = "#fff";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                p.size *
+                perspective,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+        /*
+            Ring front.
+        */
+
+        ctx.save();
+
+        ctx.translate(cx,cy);
+        ctx.rotate(-.12);
+
+        for(const p of ring){
+
+            const a = p.angle + rotation * .8;
+
+            const depth =
+                Math.sin(a);
+
+            if(depth <= .05) continue;
+
+            const x =
+                Math.cos(a) *
+                R *
+                p.radius;
+
+            const y =
+                Math.sin(a) *
+                R *
+                p.radius *
+                .26;
+
+            ctx.globalAlpha =
+                p.alpha * .55;
+
+            ctx.fillStyle = "#fff";
+
+            ctx.beginPath();
+
+            ctx.arc(
+                x,
+                y,
+                p.size,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+        }
+
+        ctx.restore();
+
+        ctx.globalAlpha = 1;
+
+        requestAnimationFrame(draw);
+    }
+
+    /*
+        UI is already available before this starts.
+    */
+
+    function start(){
+
+        resize();
+
+        running =
+            document.visibilityState !== "hidden";
+
+        requestAnimationFrame(draw);
+    }
+
+    window.addEventListener(
+        "resize",
+        resize,
+        {passive:true}
+    );
+
+    document.addEventListener(
+        "visibilitychange",
+        () => {
+            running =
+                document.visibilityState !== "hidden";
+        }
+    );
+
+    /*
+        Give browser one frame for UI first.
+    */
+
+    if("requestIdleCallback" in window){
+
+        requestIdleCallback(
+            start,
+            {timeout:1000}
+        );
+
+    }else{
+
+        setTimeout(start,50);
+    }
+
+})();
+
+/* -------------------------------------------------------
+   START APPLICATION
+------------------------------------------------------- */
+
+/*
+    IMPORTANT:
+    Initialize after the first browser paint.
+    The input therefore does not wait for Saturn.
+*/
+
+function boot(){
+
+    initializeState();
+
+    updateStatus();
+
+    resizeTextarea();
+
+    /*
+        Focus only after everything is painted.
+    */
+
+    setTimeout(() => {
+
+        if(window.innerWidth > 800){
+            promptEl.focus({
+                preventScroll:true
+            });
+        }
+
+    },80);
+}
+
+if(document.readyState === "loading"){
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        () => {
+            requestAnimationFrame(boot);
+        },
+        {once:true}
+    );
 
 }else{
 
-  init();
-
+    requestAnimationFrame(boot);
 }
 
 </script>
 
 </body>
-  </html>
+      </html>
